@@ -11,7 +11,9 @@ interface MatchData {
   id: string;
   match_date: string;
   num_teams: number;
+  mvp_player_id?: string | null;
   teams: (MatchTeam & { players: Player[] })[];
+  events?: any[];
 }
 
 interface GoalEntry {
