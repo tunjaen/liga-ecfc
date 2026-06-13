@@ -31,6 +31,13 @@ export default function RegistrarPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completedMatches, setCompletedMatches] = useState<MatchData[]>([]);
+  const [editingMatch, setEditingMatch] = useState<MatchData | null>(null);
+  const [expandedDates, setExpandedDates] = useState<string[]>([]);
+
+  const toggleDate = (date: string) => {
+    setExpandedDates(prev => prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]);
+  };
 
   // Rey de la Pista (Mini-games)
   const [isMiniGameMode, setIsMiniGameMode] = useState(false);
@@ -44,51 +51,73 @@ export default function RegistrarPage() {
   }, []);
 
   const fetchMatches = async () => {
-    const { data: matchList } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('status', 'published')
-      .order('match_date', { ascending: false });
-
-    if (!matchList || matchList.length === 0) {
-      setMatches([]);
-      setLoading(false);
-      return;
-    }
-
-    const enriched: MatchData[] = [];
-    for (const match of matchList) {
-      const { data: teams } = await supabase
-        .from('match_teams')
+    try {
+      const { data: matchList, error: matchError } = await supabase
+        .from('matches')
         .select(`
           *,
-          players:match_team_players(
-            player:players(*)
+          teams:match_teams(
+            *,
+            players:match_team_players(
+              player:players(*)
+            )
           )
         `)
-        .eq('match_id', match.id)
-        .order('team_number');
+        .eq('status', 'published')
+        .order('match_date', { ascending: false });
 
-      enriched.push({
-        ...match,
-        teams: (teams || []).map((t) => ({
-          ...t,
-          players: (t.players || []).map((p: { player: Player }) => p.player),
-        })),
-      });
+      if (matchError) throw matchError;
+
+      const { data: completedList, error: completedError } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          teams:match_teams(
+            *,
+            players:match_team_players(
+              player:players(*)
+            )
+          ),
+          events:match_events(*)
+        `)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (completedError) throw completedError;
+
+      const enrichMatches = (list: any[]) => {
+        if (!list || list.length === 0) return [];
+        return list.map((match) => ({
+          ...match,
+          teams: (match.teams || [])
+            .map((t: any) => ({
+              ...t,
+              players: (t.players || []).map((p: any) => p.player),
+            }))
+            .sort((a: any, b: any) => a.team_number - b.team_number),
+          events: match.events || [],
+        }));
+      };
+
+      setMatches(enrichMatches(matchList || []));
+      setCompletedMatches(enrichMatches(completedList || []));
+    } catch (err) {
+      console.error("Error fetching matches:", err);
+      // Optional: alert the user or show a toast
+    } finally {
+      setLoading(false);
     }
-
-    setMatches(enriched);
-    setLoading(false);
   };
 
-  const selectedMatch = matches.find((m) => m.id === selectedMatchId);
+  const selectedMatch = editingMatch || matches.find((m) => m.id === selectedMatchId);
   const allPlayers = selectedMatch
     ? selectedMatch.teams.flatMap((t) => t.players.map((p) => ({ ...p, teamId: t.id, teamColor: t.team_color, teamName: t.team_name })))
     : [];
 
   const handleMatchSelect = (matchId: string) => {
     setSelectedMatchId(matchId);
+    setEditingMatch(null);
     setGoals([]);
     setMvpId('');
     setSaved(false);
@@ -109,6 +138,54 @@ export default function RegistrarPage() {
     }
   };
 
+  const handleEditMatch = async (match: MatchData) => {
+    setEditingMatch(match);
+    setSelectedMatchId('');
+    setSaved(false);
+    setMvpId(match.mvp_player_id || '');
+
+    if (match.num_teams > 2) {
+      setIsMiniGameMode(false);
+      const initGoals: Record<string, number> = {};
+      match.teams.forEach((t) => { initGoals[t.id] = t.goals_scored; });
+      setTeamGoals(initGoals);
+    } else {
+      setIsMiniGameMode(true);
+      if (match.teams.length >= 2) {
+        setTeamAId(match.teams[0].id);
+        setTeamBId(match.teams[1].id);
+        setTeamGoals({ [match.teams[0].id]: match.teams[0].goals_scored, [match.teams[1].id]: match.teams[1].goals_scored });
+      }
+    }
+
+    const events = match.events || [];
+    if (events.length > 0) {
+      const goalsList = events.filter((e: any) => e.event_type === 'goal');
+      const assistsList = events.filter((e: any) => e.event_type === 'assist').map((a: any) => ({ ...a, used: false }));
+      
+      const loadedGoals: GoalEntry[] = goalsList.map((g: any) => {
+        const assistIndex = assistsList.findIndex((a: any) => a.match_team_id === g.match_team_id && a.minute === g.minute && !a.used);
+        let assisterId = '';
+        if (assistIndex >= 0) {
+          assisterId = assistsList[assistIndex].player_id;
+          assistsList[assistIndex].used = true;
+        }
+        return {
+          id: crypto.randomUUID(),
+          teamId: g.match_team_id,
+          scorerId: g.player_id,
+          assisterId,
+          minute: g.minute ? g.minute.toString() : ''
+        };
+      });
+      setGoals(loadedGoals);
+    } else {
+      setGoals([]);
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleTeamChange = (role: 'A' | 'B', newTeamId: string) => {
     if (role === 'A') setTeamAId(newTeamId);
     else setTeamBId(newTeamId);
@@ -120,7 +197,6 @@ export default function RegistrarPage() {
   const addGoal = () => {
     const defaultTeamId = isMiniGameMode ? teamAId : (selectedMatch?.teams[0]?.id || '');
     setGoals([
-      ...goals,
       {
         id: crypto.randomUUID(),
         teamId: defaultTeamId,
@@ -128,11 +204,12 @@ export default function RegistrarPage() {
         assisterId: '',
         minute: '',
       },
+      ...goals,
     ]);
   };
 
   const updateGoal = (id: string, field: keyof GoalEntry, value: string) => {
-    setGoals(goals.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
+    setGoals(prev => prev.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   };
 
   const removeGoal = (id: string) => {
@@ -160,6 +237,10 @@ export default function RegistrarPage() {
       await supabase.from('match_teams').update({ goals_scored: goalsScored, is_winner: isWinner }).eq('id', team.id);
     }
 
+    if (editingMatch) {
+      await supabase.from('match_events').delete().eq('match_id', selectedMatch.id);
+    }
+
     for (const goal of goals) {
       if (!goal.scorerId) continue;
       await supabase.from('match_events').insert({
@@ -175,6 +256,7 @@ export default function RegistrarPage() {
     await supabase.from('matches').update({ status: 'completed', mvp_player_id: mvpId }).eq('id', selectedMatch.id);
     setSaving(false);
     setSaved(true);
+    setEditingMatch(null);
     fetchMatches();
   };
 
@@ -195,55 +277,79 @@ export default function RegistrarPage() {
     const isWinnerA = goalsA > goalsB;
     const isWinnerB = goalsB > goalsA;
 
-    // 1. Create new match record
-    const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
-      match_date: selectedMatch.match_date,
-      status: 'completed',
-      num_teams: 2,
-    }).select().single();
+    let targetMatchId = selectedMatch.id;
+    let newTeamAId = teamAId;
+    let newTeamBId = teamBId;
 
-    if (matchError || !newMatch) {
-      setSaving(false);
-      alert('Error creando mini-partido');
-      return;
-    }
-
-    // 2. Insert match_teams and players
-    const insertTeam = async (t: typeof teamA, goalsScored: number, isWinner: boolean, teamNumber: number) => {
-      const { data: newTeam } = await supabase.from('match_teams').insert({
-        match_id: newMatch.id, team_number: teamNumber, team_name: t.team_name, team_color: t.team_color, total_points: t.total_points, goals_scored: goalsScored, is_winner: isWinner
+    if (editingMatch) {
+      // Estamos editando un mini-partido existente
+      await supabase.from('match_teams').update({ goals_scored: goalsA, is_winner: isWinnerA }).eq('id', teamAId);
+      await supabase.from('match_teams').update({ goals_scored: goalsB, is_winner: isWinnerB }).eq('id', teamBId);
+      await supabase.from('match_events').delete().eq('match_id', selectedMatch.id);
+    } else {
+      // 1. Create new match record
+      const { data: newMatch, error: matchError } = await supabase.from('matches').insert({
+        match_date: selectedMatch.match_date,
+        status: 'completed',
+        num_teams: 2,
       }).select().single();
-      
-      if (newTeam) {
-        const teamPlayers = t.players.map(p => ({ match_team_id: newTeam.id, player_id: p.id }));
-        await supabase.from('match_team_players').insert(teamPlayers);
-      }
-      return newTeam;
-    };
 
-    const newTeamA = await insertTeam(teamA, goalsA, isWinnerA, 1);
-    const newTeamB = await insertTeam(teamB, goalsB, isWinnerB, 2);
+      if (matchError || !newMatch) {
+        setSaving(false);
+        alert('Error creando mini-partido');
+        return;
+      }
+      targetMatchId = newMatch.id;
+
+      // 2. Insert match_teams and players
+      const insertTeam = async (t: typeof teamA, goalsScored: number, isWinner: boolean, teamNumber: number) => {
+        const { data: newTeam } = await supabase.from('match_teams').insert({
+          match_id: newMatch.id, team_number: teamNumber, team_name: t.team_name, team_color: t.team_color, total_points: t.total_points, goals_scored: goalsScored, is_winner: isWinner
+        }).select().single();
+        
+        if (newTeam) {
+          const teamPlayers = t.players.map(p => ({ match_team_id: newTeam.id, player_id: p.id }));
+          await supabase.from('match_team_players').insert(teamPlayers);
+        }
+        return newTeam;
+      };
+
+      const newTeamA = await insertTeam(teamA, goalsA, isWinnerA, 1);
+      const newTeamB = await insertTeam(teamB, goalsB, isWinnerB, 2);
+      if (newTeamA && newTeamB) {
+        newTeamAId = newTeamA.id;
+        newTeamBId = newTeamB.id;
+      }
+    }
 
     // 3. Insert events
     for (const goal of goals) {
       if (!goal.scorerId) continue;
-      const newTeamId = goal.teamId === teamAId ? newTeamA?.id : newTeamB?.id;
-      if (!newTeamId) continue;
+      // if editing, the teamId stays the same. if new, we use the newly created team ids
+      const targetTeamId = editingMatch ? goal.teamId : (goal.teamId === teamAId ? newTeamAId : newTeamBId);
+      if (!targetTeamId) continue;
 
       await supabase.from('match_events').insert({
-        match_id: newMatch.id, player_id: goal.scorerId, match_team_id: newTeamId, event_type: 'goal', minute: goal.minute ? parseInt(goal.minute) : null,
+        match_id: targetMatchId, player_id: goal.scorerId, match_team_id: targetTeamId, event_type: 'goal', minute: goal.minute ? parseInt(goal.minute) : null,
       });
       if (goal.assisterId) {
         await supabase.from('match_events').insert({
-          match_id: newMatch.id, player_id: goal.assisterId, match_team_id: newTeamId, event_type: 'assist', minute: goal.minute ? parseInt(goal.minute) : null,
+          match_id: targetMatchId, player_id: goal.assisterId, match_team_id: targetTeamId, event_type: 'assist', minute: goal.minute ? parseInt(goal.minute) : null,
         });
       }
     }
 
     setSaving(false);
-    alert('¡Mini-partido guardado! Puedes registrar otro o finalizar la jornada.');
-    setGoals([]);
-    setTeamGoals({ [teamAId]: 0, [teamBId]: 0 });
+    if (editingMatch) {
+      alert('¡Mini-partido actualizado!');
+      setEditingMatch(null);
+      fetchMatches();
+    } else {
+      alert('¡Mini-partido guardado! Puedes registrar otro o finalizar la jornada.');
+      setGoals([]);
+      setTeamGoals({ [teamAId]: 0, [teamBId]: 0 });
+      fetchMatches(); // Refrescar la lista de partidos completados
+    }
   };
 
   const handleFinalizeDay = async () => {
@@ -291,11 +397,22 @@ export default function RegistrarPage() {
     ? selectedMatch?.teams.filter(t => t.id === teamAId || t.id === teamBId) || []
     : selectedMatch?.teams || [];
 
+  const currentSessionMatches = selectedMatch && isMiniGameMode
+    ? completedMatches.filter(m => m.match_date === selectedMatch.match_date && m.num_teams === 2)
+    : [];
+
   return (
     <div className="animate-fade-in">
-      <h1 className="mb-lg">📝 Registrar Resultado</h1>
+      <div className="flex items-center justify-between mb-lg">
+        <h1>📝 {editingMatch ? 'Editar Partido' : 'Registrar Resultado'}</h1>
+        {editingMatch && (
+          <button className="btn btn-secondary btn-sm" onClick={() => setEditingMatch(null)}>
+            Cancelar Edición
+          </button>
+        )}
+      </div>
 
-      {matches.length === 0 ? (
+      {!editingMatch && matches.length === 0 ? (
         <div className="card">
           <div className="empty-state">
             <div className="empty-state-icon">📝</div>
@@ -308,21 +425,46 @@ export default function RegistrarPage() {
       ) : (
         <>
           {/* Select Match */}
-          <div className="input-group mb-lg">
-            <label className="input-label">Seleccionar Partido o Convocatoria</label>
-            <select
-              className="select"
-              value={selectedMatchId}
-              onChange={(e) => handleMatchSelect(e.target.value)}
-            >
-              <option value="">-- Selecciona una convocatoria --</option>
-              {matches.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {formatDate(m.match_date)} — {m.num_teams} Equipos
-                </option>
-              ))}
-            </select>
-          </div>
+          {!editingMatch && (
+            <div className="input-group mb-lg">
+              <label className="input-label">Seleccionar Partido o Convocatoria</label>
+              <select
+                className="select"
+                value={selectedMatchId}
+                onChange={(e) => handleMatchSelect(e.target.value)}
+              >
+                <option value="">-- Selecciona una convocatoria --</option>
+                {matches.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {formatDate(m.match_date)} — {m.num_teams} Equipos
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Mini-partidos de la sesión actual */}
+          {!editingMatch && selectedMatch && isMiniGameMode && currentSessionMatches.length > 0 && (
+            <div className="mb-lg">
+              <h3 className="mb-sm text-sm font-semibold" style={{ color: 'var(--accent-primary)' }}>Mini-partidos jugados en esta sesión:</h3>
+              <div className="flex flex-col gap-xs">
+                {currentSessionMatches.map((m) => (
+                  <div key={m.id} className="card flex items-center justify-between" style={{ padding: 'var(--space-sm) var(--space-md)', background: 'var(--bg-surface)' }}>
+                    <div className="text-sm flex items-center gap-xs">
+                      {m.teams.map((t, i) => (
+                        <span key={t.id} style={{ color: t.team_color, fontWeight: t.is_winner ? 700 : 400 }}>
+                          {t.team_name} <span className="text-muted">({t.goals_scored})</span> {i < m.teams.length - 1 ? ' vs ' : ''}
+                        </span>
+                      ))}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleEditMatch(m)}>
+                      Editar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {selectedMatch && !saved && (
             <>
@@ -392,7 +534,7 @@ export default function RegistrarPage() {
                     {goals.map((goal, index) => (
                       <div key={goal.id} className="card" style={{ background: 'var(--bg-surface)', padding: 'var(--space-md)' }}>
                         <div className="flex items-center justify-between mb-sm">
-                          <span className="text-xs font-semibold text-muted">Gol #{index + 1}</span>
+                          <span className="text-xs font-semibold text-muted">Gol #{goals.length - index}</span>
                           <button className="btn btn-ghost btn-icon btn-sm" onClick={() => removeGoal(goal.id)} style={{ color: 'var(--accent-danger)' }}>
                             <Trash2 size={14} />
                           </button>
@@ -450,25 +592,27 @@ export default function RegistrarPage() {
                 <div className="flex gap-md" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
                   <button className="btn btn-primary btn-lg" onClick={handleSaveMiniGame} disabled={saving}>
                     <Swords size={20} />
-                    {saving ? 'Guardando...' : 'Guardar Mini-partido'}
+                    {saving ? 'Guardando...' : (editingMatch ? 'Actualizar Mini-partido' : 'Guardar Mini-partido')}
                   </button>
 
-                  <div className="card" style={{ flex: '1', minWidth: '300px', padding: 'var(--space-md)' }}>
-                    <div className="flex items-center gap-sm mb-sm" style={{ color: 'var(--accent-warning)' }}>
-                      <CalendarCheck size={18} />
-                      <h4 style={{ fontSize: '0.95rem' }}>Finalizar Jornada</h4>
+                  {!editingMatch && (
+                    <div className="card" style={{ flex: '1', minWidth: '300px', padding: 'var(--space-md)' }}>
+                      <div className="flex items-center gap-sm mb-sm" style={{ color: 'var(--accent-warning)' }}>
+                        <CalendarCheck size={18} />
+                        <h4 style={{ fontSize: '0.95rem' }}>Finalizar Jornada</h4>
+                      </div>
+                      <p className="text-xs text-muted mb-md">Al terminar todos los mini-partidos del día, selecciona el MVP global y cierra la jornada.</p>
+                      <div className="input-group mb-md">
+                        <select className="select" value={mvpId} onChange={(e) => setMvpId(e.target.value)}>
+                          <option value="">Seleccionar MVP Global...</option>
+                          {allPlayers.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.teamName})</option>)}
+                        </select>
+                      </div>
+                      <button className="btn btn-secondary w-full" onClick={handleFinalizeDay} disabled={saving || !mvpId}>
+                        Finalizar Jornada
+                      </button>
                     </div>
-                    <p className="text-xs text-muted mb-md">Al terminar todos los mini-partidos del día, selecciona el MVP global y cierra la jornada.</p>
-                    <div className="input-group mb-md">
-                      <select className="select" value={mvpId} onChange={(e) => setMvpId(e.target.value)}>
-                        <option value="">Seleccionar MVP Global...</option>
-                        {allPlayers.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.teamName})</option>)}
-                      </select>
-                    </div>
-                    <button className="btn btn-secondary w-full" onClick={handleFinalizeDay} disabled={saving || !mvpId}>
-                      Finalizar Jornada
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
             </>
@@ -484,6 +628,82 @@ export default function RegistrarPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Lista de Partidos Completados (Historial Reciente) */}
+      {!editingMatch && completedMatches.length > 0 && (
+        <div className="mt-2xl">
+          <h2 className="mb-md" style={{ fontSize: '1.25rem' }}>🔄 Partidos Guardados Recientemente</h2>
+          <div className="flex flex-col gap-sm">
+            {Object.entries(
+              completedMatches.reduce((acc, match) => {
+                if (!acc[match.match_date]) acc[match.match_date] = [];
+                acc[match.match_date].push(match);
+                return acc;
+              }, {} as Record<string, MatchData[]>)
+            )
+            .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+            .map(([date, groupMatches]) => {
+              if (groupMatches.length === 1) {
+                const m = groupMatches[0];
+                return (
+                  <div key={m.id} className="card flex items-center justify-between" style={{ padding: 'var(--space-sm) var(--space-md)' }}>
+                    <div>
+                      <div className="text-sm font-semibold">{formatDate(m.match_date)}</div>
+                      <div className="text-xs text-muted flex items-center gap-xs mt-xs">
+                        {m.teams.map((t, i) => (
+                          <span key={t.id} style={{ color: t.team_color }}>
+                            {t.team_name} ({t.goals_scored}) {i < m.teams.length - 1 ? ' vs ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <button className="btn btn-secondary btn-sm" onClick={() => handleEditMatch(m)}>
+                      Editar
+                    </button>
+                  </div>
+                );
+              } else {
+                const isExpanded = expandedDates.includes(date);
+                return (
+                  <div key={date} className="card p-0 overflow-hidden mb-sm" style={{ padding: 0 }}>
+                    <button 
+                      className="w-full flex items-center justify-between" 
+                      style={{ padding: 'var(--space-md)', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }} 
+                      onClick={() => toggleDate(date)}
+                    >
+                      <div className="flex items-center gap-sm font-semibold">
+                        <Swords size={18} style={{ color: 'var(--accent-primary)' }}/>
+                        {formatDate(date)} — Rey de la Pista ({groupMatches.length} partidos)
+                      </div>
+                      <span className="text-muted" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="flex flex-col gap-xs" style={{ padding: '0 var(--space-md) var(--space-md)' }}>
+                        <div style={{ height: '1px', background: 'var(--border-color)', marginBottom: 'var(--space-sm)' }} />
+                        {groupMatches.map((m, idx) => (
+                          <div key={m.id} className="flex items-center justify-between" style={{ padding: 'var(--space-xs) 0', borderBottom: idx < groupMatches.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                             <div className="text-sm flex items-center gap-xs">
+                               <span className="text-muted text-xs mr-xs">#{groupMatches.length - idx}</span>
+                               {m.teams.map((t, i) => (
+                                 <span key={t.id} style={{ color: t.team_color, fontWeight: t.is_winner ? 700 : 400 }}>
+                                   {t.team_name} <span className="text-muted">({t.goals_scored})</span> {i < m.teams.length - 1 ? ' vs ' : ''}
+                                 </span>
+                               ))}
+                             </div>
+                             <button className="btn btn-ghost btn-sm" onClick={() => handleEditMatch(m)}>
+                               Editar
+                             </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

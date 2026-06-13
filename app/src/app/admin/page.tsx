@@ -1,7 +1,8 @@
 import { getPlayers, getMatches } from '@/lib/stats';
 import Link from 'next/link';
-import { Users, Shuffle, ClipboardCheck } from 'lucide-react';
+import { Users, Shuffle, ClipboardCheck, Printer, Upload } from 'lucide-react';
 import type { Metadata } from 'next';
+import { ResetMatchesButton } from '@/components/ResetMatchesButton';
 
 export const metadata: Metadata = {
   title: 'Admin | Equipos Balanceados ⚽',
@@ -20,7 +21,10 @@ export default async function AdminDashboard() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="mb-lg">⚙️ Panel de Administración</h1>
+      <div className="flex justify-between items-center mb-lg">
+        <h1 className="mb-0">⚙️ Panel de Administración</h1>
+        <ResetMatchesButton />
+      </div>
 
       {/* Stats */}
       <div className="grid-3 mb-lg">
@@ -81,6 +85,22 @@ export default async function AdminDashboard() {
             <ClipboardCheck size={32} color="var(--accent-warning)" style={{ margin: '0 auto var(--space-sm)' }} />
             <div className="font-semibold mb-xs">Registrar Resultado</div>
             <div className="text-sm text-muted">Goles, asistencias, MVP</div>
+          </div>
+        </Link>
+
+        <Link href="/admin/plantilla-imprimir">
+          <div className="card card-interactive text-center" id="admin-action-plantilla">
+            <Printer size={32} color="var(--accent-primary)" style={{ margin: '0 auto var(--space-sm)' }} />
+            <div className="font-semibold mb-xs">Imprimir Hoja</div>
+            <div className="text-sm text-muted">Plantilla para rellenar a mano</div>
+          </div>
+        </Link>
+
+        <Link href="/admin/importar">
+          <div className="card card-interactive text-center" id="admin-action-importar">
+            <Upload size={32} color="var(--accent-secondary)" style={{ margin: '0 auto var(--space-sm)' }} />
+            <div className="font-semibold mb-xs">Importar Hoja</div>
+            <div className="text-sm text-muted">Digitalizar hoja con IA</div>
           </div>
         </Link>
       </div>
