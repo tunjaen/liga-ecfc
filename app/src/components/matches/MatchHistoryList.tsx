@@ -47,7 +47,15 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
 
   matchesByDate.forEach((dateMatches, dateStr) => {
     const reyMatches = dateMatches.filter(m => m.num_teams === 2);
-    const otherMatches = dateMatches.filter(m => m.num_teams !== 2);
+    const otherMatches = dateMatches.filter(m => {
+      if (m.num_teams !== 2) {
+        // Un partido con más de 2 equipos y 0 goles en total es el "esqueleto" del Matchmaker
+        // y no debe mostrarse como un partido jugado (especialmente si ya importamos los mini-partidos).
+        const totalGoals = m.teams.reduce((acc, t) => acc + (t.goals_scored || 0), 0);
+        return totalGoals > 0;
+      }
+      return false;
+    });
 
     if (reyMatches.length > 1) {
       groups.push({ type: 'rey', dateStr, matches: reyMatches });

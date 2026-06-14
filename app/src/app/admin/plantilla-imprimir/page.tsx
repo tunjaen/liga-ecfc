@@ -301,12 +301,14 @@ function ReyPlantilla({ match }: { match: MatchData }) {
             <th rowSpan={2} style={{ width: '18px' }}>#</th>
             <th rowSpan={2} style={{ width: '28px' }}>Eq.A</th>
             <th rowSpan={2} style={{ width: '28px' }}>Eq.B</th>
-            <th rowSpan={2} style={{ width: '30px' }}>Res.</th>
+            <th colSpan={2} style={{ width: '36px' }}>Res.</th>
             <th colSpan={3}>GOL 1</th>
             <th colSpan={3}>GOL 2</th>
             <th colSpan={3}>GOL 3</th>
           </tr>
           <tr>
+            <th style={{ fontSize: '8px' }}>A</th>
+            <th style={{ fontSize: '8px' }}>B</th>
             <th style={{ fontSize: '7px' }}>Gol.</th>
             <th style={{ fontSize: '7px' }}>Asis.</th>
             <th style={{ fontSize: '7px' }}>Eq</th>
@@ -324,7 +326,8 @@ function ReyPlantilla({ match }: { match: MatchData }) {
             <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#888' }}>ej.</td>
             <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
             <td style={{ textAlign: 'center' }}>{exTeamB?.code}</td>
-            <td style={{ textAlign: 'center' }}>2-1</td>
+            <td style={{ textAlign: 'center' }}>2</td>
+            <td style={{ textAlign: 'center' }}>1</td>
             <td>{exPlayer1}</td>
             <td>{exPlayer2}</td>
             <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
@@ -338,6 +341,7 @@ function ReyPlantilla({ match }: { match: MatchData }) {
           {allRows.map(n => (
             <tr key={n} style={{ height: '24px' }}>
               <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{n}</td>
+              <td style={{ textAlign: 'center' }}></td>
               <td style={{ textAlign: 'center' }}></td>
               <td style={{ textAlign: 'center' }}></td>
               <td style={{ textAlign: 'center' }}></td>

@@ -285,8 +285,9 @@ export default function ImportarPage() {
 
       // Publish the parent match if it was published
       if (parsedData.modo === 'clasico' || parsedData.modo === 'rey') {
-        // Mark the published match as completed
-        await supabase.from('matches').update({ status: 'completed' }).eq('id', selectedMatch.id);
+        // En lugar de marcar el esqueleto original como "completed", lo eliminamos.
+        // Los resultados reales ya se han guardado como partidos nuevos.
+        await supabase.from('matches').delete().eq('id', selectedMatch.id);
       }
 
       setImportResult(`✅ ¡Importación completada! Se registraron ${registeredCount} partido(s) correctamente.`);
