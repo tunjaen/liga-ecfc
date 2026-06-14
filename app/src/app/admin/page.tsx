@@ -2,7 +2,6 @@ import { getPlayers, getMatches } from '@/lib/stats';
 import Link from 'next/link';
 import { Users, Shuffle, ClipboardCheck, Printer, Upload } from 'lucide-react';
 import type { Metadata } from 'next';
-import { ResetMatchesButton } from '@/components/ResetMatchesButton';
 
 export const metadata: Metadata = {
   title: 'Admin | Equipos Balanceados ⚽',
@@ -23,7 +22,6 @@ export default async function AdminDashboard() {
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-lg">
         <h1 className="mb-0">⚙️ Panel de Administración</h1>
-        <ResetMatchesButton />
       </div>
 
       {/* Stats */}
