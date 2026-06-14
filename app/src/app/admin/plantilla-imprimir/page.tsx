@@ -269,7 +269,7 @@ function ReyPlantilla({ match }: { match: MatchData }) {
   const exPlayer3 = exTeamB?.players[0]?.name || 'Andres';
   const exPlayer4 = exTeamB?.players[1]?.name || 'Luis';
 
-  const allRows = Array.from({ length: 15 }, (_, i) => i + 1);
+  const allRows = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (
     <div className="print-page">
