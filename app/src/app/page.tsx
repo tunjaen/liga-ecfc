@@ -1,8 +1,9 @@
-import { getCurrentMatch, getLastResult } from '@/lib/stats';
+import { getCurrentMatch, getMatches } from '@/lib/stats';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
 import { getPlayerPhotoUrl, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { MatchHistoryList } from '@/components/matches/MatchHistoryList';
 
 export const metadata: Metadata = {
   title: 'Equipos Balanceados ⚽ | Inicio',
@@ -12,10 +13,14 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [currentMatch, lastResult] = await Promise.all([
+  const [currentMatch, allCompletedMatches] = await Promise.all([
     getCurrentMatch().catch(() => null),
-    getLastResult().catch(() => null),
+    getMatches('completed').catch(() => []),
   ]);
+
+  const lastMatches = allCompletedMatches.length > 0
+    ? allCompletedMatches.filter(m => m.match_date === allCompletedMatches[0].match_date)
+    : [];
 
   return (
     <div className="page-content">
@@ -121,56 +126,8 @@ export default async function HomePage() {
         {/* Last Result */}
         <section className="section" id="last-result-section">
           <h2 className="section-title">🏆 Último Resultado</h2>
-          {lastResult ? (
-            <Link href={`/partidos/${lastResult.id}`}>
-              <div className="card card-interactive">
-                <div className="text-sm text-muted mb-md">
-                  {formatDate(lastResult.match_date)}
-                </div>
-                <div className="score-display">
-                  {lastResult.teams.map((team, i) => (
-                    <div key={team.id} className="flex items-center gap-md" style={{ flex: 1 }}>
-                      {i > 0 && <span className="score-vs">VS</span>}
-                      <div className="score-team">
-                        <span
-                          className="score-team-name"
-                          style={{ color: team.team_color }}
-                        >
-                          {team.team_name}
-                        </span>
-                        <span className="score-number" style={{
-                          color: team.is_winner ? 'var(--accent-secondary)' : 'var(--text-primary)',
-                        }}>
-                          {team.goals_scored}
-                        </span>
-                        {team.is_winner && (
-                          <span className="badge badge-success">Victoria</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* MVP */}
-                {lastResult.mvp_player && (
-                  <div className="flex items-center gap-sm mt-lg" style={{
-                    padding: 'var(--space-sm) var(--space-md)',
-                    background: 'rgba(251, 191, 36, 0.08)',
-                    borderRadius: 'var(--radius-md)',
-                  }}>
-                    <span className="badge badge-mvp">⭐ MVP</span>
-                    <PlayerAvatar
-                      name={lastResult.mvp_player.name}
-                      photoUrl={getPlayerPhotoUrl(lastResult.mvp_player.photo_url)}
-                      size="sm"
-                    />
-                    <span className="font-semibold text-sm">
-                      {lastResult.mvp_player.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Link>
+          {lastMatches.length > 0 ? (
+            <MatchHistoryList matches={lastMatches} />
           ) : (
             <div className="card">
               <div className="empty-state">
