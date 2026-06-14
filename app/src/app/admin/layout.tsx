@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Users, Shuffle, ClipboardCheck, LayoutDashboard, LogOut, Printer, Upload } from 'lucide-react';
+import { Users, Shuffle, ClipboardCheck, LayoutDashboard, LogOut, Printer, Upload, Settings } from 'lucide-react';
 
 const sidebarLinks = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const sidebarLinks = [
   { href: '/admin/registrar', label: 'Registrar Resultado', icon: ClipboardCheck },
   { href: '/admin/plantilla-imprimir', label: 'Imprimir Hoja', icon: Printer },
   { href: '/admin/importar', label: 'Importar Hoja', icon: Upload },
+  { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

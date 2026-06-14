@@ -1,9 +1,11 @@
 import { getCurrentMatch, getMatches } from '@/lib/stats';
+import { getAppSettings } from '@/lib/settings';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
 import { getPlayerPhotoUrl, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MatchHistoryList } from '@/components/matches/MatchHistoryList';
+import { HeroSection } from '@/components/layout/HeroSection';
 
 export const metadata: Metadata = {
   title: 'Equipos Balanceados ⚽ | Inicio',
@@ -13,9 +15,10 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [currentMatch, allCompletedMatches] = await Promise.all([
+  const [currentMatch, allCompletedMatches, appSettings] = await Promise.all([
     getCurrentMatch().catch(() => null),
     getMatches('completed').catch(() => []),
+    getAppSettings(),
   ]);
 
   const lastMatches = allCompletedMatches.length > 0
@@ -26,44 +29,11 @@ export default async function HomePage() {
     <div className="page-content">
       <div className="container">
         {/* Hero */}
-        <section 
-          className="hero" 
-          id="hero-section"
-          style={{
-            position: 'relative',
-            backgroundImage: 'url("/fondo-cabecera.avif")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Capa oscura para asegurar que el texto sea legible sobre el fondo */}
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.55)',
-            zIndex: 0
-          }} />
-          
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h1 className="hero-title" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-              ECFC
-            </h1>
-            <p className="hero-subtitle" style={{ color: 'rgba(255, 255, 255, 0.9)', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-              La escusa para ir al Blue Moon
-            </p>
-            <img 
-              src="/escudo.png" 
-              alt="Escudo ECFC" 
-              style={{ 
-                width: '120px', 
-                height: 'auto', 
-                marginTop: 'var(--space-md)',
-                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
-              }} 
-            />
-          </div>
-        </section>
+        <HeroSection 
+          title={appSettings.title} 
+          subtitle={appSettings.subtitle} 
+          heroImages={appSettings.hero_images} 
+        />
 
         {/* Current Match */}
         <section className="section" id="current-match-section">
