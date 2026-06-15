@@ -140,6 +140,22 @@ export default function RegistrarPage() {
     }
   };
 
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!confirm('¿Estás seguro de que quieres borrar este partido? Esta acción no se puede deshacer y borrará todos los registros y eventos asociados a él.')) return;
+    try {
+      const { error } = await supabase.from('matches').delete().eq('id', matchId);
+      if (error) throw error;
+      setCompletedMatches(prev => prev.filter(m => m.id !== matchId));
+      setMatches(prev => prev.filter(m => m.id !== matchId));
+      if (editingMatch?.id === matchId) setEditingMatch(null);
+      if (selectedMatchId === matchId) setSelectedMatchId('');
+      alert('Partido borrado correctamente.');
+    } catch (error) {
+      console.error('Error al borrar:', error);
+      alert('Error al borrar el partido.');
+    }
+  };
+
   const handleEditMatch = async (match: MatchData) => {
     setEditingMatch(match);
     setSelectedMatchId('');
@@ -660,9 +676,14 @@ export default function RegistrarPage() {
                         ))}
                       </div>
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => handleEditMatch(m)}>
-                      Editar
-                    </button>
+                    <div className="flex gap-sm">
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleEditMatch(m)}>
+                        Editar
+                      </button>
+                      <button className="btn btn-ghost btn-sm btn-icon" style={{ color: 'var(--accent-danger)' }} onClick={() => handleDeleteMatch(m.id)} title="Borrar partido">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 );
               } else {
@@ -693,9 +714,14 @@ export default function RegistrarPage() {
                                  </span>
                                ))}
                              </div>
-                             <button className="btn btn-ghost btn-sm" onClick={() => handleEditMatch(m)}>
-                               Editar
-                             </button>
+                             <div className="flex gap-sm">
+                               <button className="btn btn-ghost btn-sm" onClick={() => handleEditMatch(m)}>
+                                 Editar
+                               </button>
+                               <button className="btn btn-ghost btn-sm btn-icon" style={{ color: 'var(--accent-danger)' }} onClick={() => handleDeleteMatch(m.id)} title="Borrar partido">
+                                 <Trash2 size={16} />
+                               </button>
+                             </div>
                           </div>
                         ))}
                       </div>
