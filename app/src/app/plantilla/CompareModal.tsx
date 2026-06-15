@@ -68,6 +68,8 @@ export function CompareModal({ player1, player2, leaderboard1, leaderboard2, onC
           {renderStatRow('Ataque', player1.attack, player2.attack)}
           {renderStatRow('Defensa', player1.defense, player2.defense)}
           {renderStatRow('Físico', player1.fitness, player2.fitness)}
+          {renderStatRow('Técnica', player1.technique, player2.technique)}
+          {renderStatRow('IQ', player1.iq, player2.iq)}
 
           <h4 className="text-center mt-lg mb-md text-sm text-muted">Rendimiento Histórico</h4>
           {renderStatRow('Goles', leaderboard1?.total_goals || 0, leaderboard2?.total_goals || 0)}

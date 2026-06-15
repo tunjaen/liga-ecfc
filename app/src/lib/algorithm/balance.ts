@@ -42,22 +42,26 @@ function getTeamStats(teams: Player[][]) {
       defense: acc.defense + p.defense,
       attack: acc.attack + p.attack,
       fitness: acc.fitness + p.fitness,
+      technique: acc.technique + p.technique,
+      iq: acc.iq + p.iq,
       total_score: acc.total_score + p.total_score,
-    }), { defense: 0, attack: 0, fitness: 0, total_score: 0 })
+    }), { defense: 0, attack: 0, fitness: 0, technique: 0, iq: 0, total_score: 0 })
   );
 }
 
 /**
  * Métrica combinada de desviación para optimizar todos los stats
  */
-function calculateCombinedStdDev(stats: { defense: number, attack: number, fitness: number, total_score: number }[]): number {
+function calculateCombinedStdDev(stats: { defense: number, attack: number, fitness: number, technique: number, iq: number, total_score: number }[]): number {
   const defStdDev = calculateStdDev(stats.map(s => s.defense));
   const atkStdDev = calculateStdDev(stats.map(s => s.attack));
   const fitStdDev = calculateStdDev(stats.map(s => s.fitness));
+  const tecStdDev = calculateStdDev(stats.map(s => s.technique));
+  const iqStdDev = calculateStdDev(stats.map(s => s.iq));
   const totalStdDev = calculateStdDev(stats.map(s => s.total_score));
   
   // Damos peso a los atributos individuales y también al total general
-  return defStdDev + atkStdDev + fitStdDev + totalStdDev;
+  return defStdDev + atkStdDev + fitStdDev + tecStdDev + iqStdDev + totalStdDev;
 }
 
 /**
@@ -128,30 +132,35 @@ export function generateTeamSummary(teamPlayers: Player[], allPlayers: Player[])
   const teamAvgAtk = teamPlayers.reduce((sum, p) => sum + p.attack, 0) / teamPlayers.length;
   const teamAvgDef = teamPlayers.reduce((sum, p) => sum + p.defense, 0) / teamPlayers.length;
   const teamAvgFit = teamPlayers.reduce((sum, p) => sum + p.fitness, 0) / teamPlayers.length;
+  const teamAvgTec = teamPlayers.reduce((sum, p) => sum + p.technique, 0) / teamPlayers.length;
+  const teamAvgIq = teamPlayers.reduce((sum, p) => sum + p.iq, 0) / teamPlayers.length;
 
   const globalAvgAtk = allPlayers.reduce((sum, p) => sum + p.attack, 0) / allPlayers.length;
   const globalAvgDef = allPlayers.reduce((sum, p) => sum + p.defense, 0) / allPlayers.length;
   const globalAvgFit = allPlayers.reduce((sum, p) => sum + p.fitness, 0) / allPlayers.length;
+  const globalAvgTec = allPlayers.reduce((sum, p) => sum + p.technique, 0) / allPlayers.length;
+  const globalAvgIq = allPlayers.reduce((sum, p) => sum + p.iq, 0) / allPlayers.length;
 
   const diffAtk = teamAvgAtk - globalAvgAtk;
   const diffDef = teamAvgDef - globalAvgDef;
   const diffFit = teamAvgFit - globalAvgFit;
+  const diffTec = teamAvgTec - globalAvgTec;
+  const diffIq = teamAvgIq - globalAvgIq;
 
   let summary = "Equipo equilibrado.";
-  const maxDiff = Math.max(diffAtk, diffDef, diffFit);
-  
-  if (maxDiff > 0.4) {
-    if (maxDiff === diffAtk) summary = "🔥 Fuerte en ataque.";
-    else if (maxDiff === diffDef) summary = "🛡️ Sólido en defensa.";
-    else if (maxDiff === diffFit) summary = "🏃‍♂️ Gran forma física.";
-  }
-  
-  const minDiff = Math.min(diffAtk, diffDef, diffFit);
-  if (minDiff < -0.4) {
-    if (minDiff === diffAtk) summary += " Algo débil en ataque.";
-    else if (minDiff === diffDef) summary += " Vulnerable en defensa.";
-    else if (minDiff === diffFit) summary += " Forma física mejorable.";
-  }
+  const diffs = [
+    { diff: diffAtk, strong: "🔥 Fuerte en ataque.", weak: "Algo débil en ataque." },
+    { diff: diffDef, strong: "🛡️ Sólido en defensa.", weak: "Vulnerable en defensa." },
+    { diff: diffFit, strong: "🏃‍♂️ Gran forma física.", weak: "Forma física mejorable." },
+    { diff: diffTec, strong: "🎯 Muy técnico.", weak: "Técnica mejorable." },
+    { diff: diffIq, strong: "🧠 Alto IQ futbolístico.", weak: "IQ futbolístico mejorable." },
+  ];
+
+  const maxEntry = diffs.reduce((a, b) => a.diff > b.diff ? a : b);
+  if (maxEntry.diff > 0.4) summary = maxEntry.strong;
+
+  const minEntry = diffs.reduce((a, b) => a.diff < b.diff ? a : b);
+  if (minEntry.diff < -0.4) summary += " " + minEntry.weak;
 
   return summary;
 }
@@ -196,12 +205,16 @@ function optimizeWithSwaps(
     newStats[teamA].defense = newStats[teamA].defense - playerA.defense + playerB.defense;
     newStats[teamA].attack = newStats[teamA].attack - playerA.attack + playerB.attack;
     newStats[teamA].fitness = newStats[teamA].fitness - playerA.fitness + playerB.fitness;
+    newStats[teamA].technique = newStats[teamA].technique - playerA.technique + playerB.technique;
+    newStats[teamA].iq = newStats[teamA].iq - playerA.iq + playerB.iq;
     newStats[teamA].total_score = newStats[teamA].total_score - playerA.total_score + playerB.total_score;
 
     // Quitar jugador B del equipo B, agregar jugador A
     newStats[teamB].defense = newStats[teamB].defense - playerB.defense + playerA.defense;
     newStats[teamB].attack = newStats[teamB].attack - playerB.attack + playerA.attack;
     newStats[teamB].fitness = newStats[teamB].fitness - playerB.fitness + playerA.fitness;
+    newStats[teamB].technique = newStats[teamB].technique - playerB.technique + playerA.technique;
+    newStats[teamB].iq = newStats[teamB].iq - playerB.iq + playerA.iq;
     newStats[teamB].total_score = newStats[teamB].total_score - playerB.total_score + playerA.total_score;
 
     const simulatedTeams = optimized.map(t => [...t]);

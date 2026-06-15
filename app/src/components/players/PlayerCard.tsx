@@ -40,6 +40,8 @@ export function PlayerCard({ player, index = 0, onClick, selected }: PlayerCardP
         <StatMiniBar label="DEF" value={player.defense} type="defense" />
         <StatMiniBar label="ATK" value={player.attack} type="attack" />
         <StatMiniBar label="FIT" value={player.fitness} type="fitness" />
+        <StatMiniBar label="TEC" value={player.technique} type="technique" />
+        <StatMiniBar label="IQ" value={player.iq} type="iq" />
       </div>
     </div>
   );
@@ -62,7 +64,7 @@ function StatMiniBar({
 }: {
   label: string;
   value: number;
-  type: 'defense' | 'attack' | 'fitness';
+  type: 'defense' | 'attack' | 'fitness' | 'technique' | 'iq';
 }) {
   return (
     <div className="stat-bar-container">

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!player) return { title: 'Jugador no encontrado' };
   return {
     title: `${player.name} | Equipos Balanceados ⚽`,
-    description: `Ficha de ${player.name} - DEF: ${player.defense}, ATK: ${player.attack}, FIT: ${player.fitness}`,
+    description: `Ficha de ${player.name} - DEF: ${player.defense}, ATK: ${player.attack}, FIT: ${player.fitness}, TEC: ${player.technique}, IQ: ${player.iq}`,
   };
 }
 
@@ -58,6 +58,8 @@ export default async function PlayerDetailPage({ params }: Props) {
             defense={player.defense}
             attack={player.attack}
             fitness={player.fitness}
+            technique={player.technique}
+            iq={player.iq}
             size={220}
           />
         </div>

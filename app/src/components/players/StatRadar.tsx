@@ -2,27 +2,30 @@ interface StatRadarProps {
   defense: number;
   attack: number;
   fitness: number;
+  technique: number;
+  iq: number;
   size?: number;
 }
 
-export function StatRadar({ defense, attack, fitness, size = 200 }: StatRadarProps) {
+export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 }: StatRadarProps) {
   const center = size / 2;
-  const maxRadius = (size / 2) * 0.8;
+  const maxRadius = (size / 2) * 0.75;
 
-  // Triangle points for DEF (top), ATK (bottom-right), FIT (bottom-left)
-  const angles = [
-    -Math.PI / 2,           // Top (Defense)
-    -Math.PI / 2 + (2 * Math.PI) / 3, // Bottom-right (Attack)
-    -Math.PI / 2 + (4 * Math.PI) / 3, // Bottom-left (Fitness)
-  ];
+  // Pentagon: 5 axes evenly spaced, starting from top
+  const numAxes = 5;
+  const angles = Array.from({ length: numAxes }, (_, i) =>
+    -Math.PI / 2 + (2 * Math.PI * i) / numAxes
+  );
 
   const labels = [
     { name: 'DEF', value: defense, color: 'var(--accent-primary)' },
     { name: 'ATK', value: attack, color: 'var(--accent-danger)' },
+    { name: 'TEC', value: technique, color: '#f59e0b' },
+    { name: 'IQ', value: iq, color: '#a78bfa' },
     { name: 'FIT', value: fitness, color: 'var(--accent-secondary)' },
   ];
 
-  // Generate grid lines (circles at 25%, 50%, 75%, 100%)
+  // Generate grid lines (polygons at 25%, 50%, 75%, 100%)
   const gridLevels = [0.25, 0.5, 0.75, 1];
 
   // Generate polygon points for the stat values
@@ -96,7 +99,7 @@ export function StatRadar({ defense, attack, fitness, size = 200 }: StatRadarPro
 
         {/* Labels */}
         {labels.map((stat, i) => {
-          const labelR = maxRadius + 20;
+          const labelR = maxRadius + 22;
           const x = center + labelR * Math.cos(angles[i]);
           const y = center + labelR * Math.sin(angles[i]);
           return (
@@ -107,7 +110,7 @@ export function StatRadar({ defense, attack, fitness, size = 200 }: StatRadarPro
               textAnchor="middle"
               dominantBaseline="central"
               fill={stat.color}
-              fontSize="12"
+              fontSize="11"
               fontWeight="700"
             >
               {stat.name} {stat.value}

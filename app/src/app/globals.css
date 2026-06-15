@@ -928,6 +928,14 @@ h4 { font-size: 1.125rem; }
   background: var(--accent-secondary);
 }
 
+.stat-bar-fill.technique {
+  background: #f59e0b;
+}
+
+.stat-bar-fill.iq {
+  background: #a78bfa;
+}
+
 .stat-bar-value {
   font-size: 0.75rem;
   font-weight: 700;

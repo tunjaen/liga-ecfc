@@ -20,6 +20,8 @@ export default function JugadoresAdminPage() {
   const [formDefense, setFormDefense] = useState(5);
   const [formAttack, setFormAttack] = useState(5);
   const [formFitness, setFormFitness] = useState(5);
+  const [formTechnique, setFormTechnique] = useState(5);
+  const [formIq, setFormIq] = useState(5);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -48,6 +50,8 @@ export default function JugadoresAdminPage() {
     setFormDefense(5);
     setFormAttack(5);
     setFormFitness(5);
+    setFormTechnique(5);
+    setFormIq(5);
     setPhotoFile(null);
     setPhotoPreview(null);
     setShowModal(true);
@@ -59,6 +63,8 @@ export default function JugadoresAdminPage() {
     setFormDefense(player.defense);
     setFormAttack(player.attack);
     setFormFitness(player.fitness);
+    setFormTechnique(player.technique);
+    setFormIq(player.iq);
     setPhotoFile(null);
     setPhotoPreview(getPlayerPhotoUrl(player.photo_url));
     setShowModal(true);
@@ -90,6 +96,8 @@ export default function JugadoresAdminPage() {
       defense: formDefense,
       attack: formAttack,
       fitness: formFitness,
+      technique: formTechnique,
+      iq: formIq,
       photo_url: photoUrl,
     };
 
@@ -115,7 +123,7 @@ export default function JugadoresAdminPage() {
     fetchPlayers();
   };
 
-  const totalScore = formDefense + formAttack + formFitness;
+  const totalScore = formDefense + formAttack + formFitness + formTechnique + formIq;
 
   return (
     <div className="animate-fade-in">
@@ -155,6 +163,8 @@ export default function JugadoresAdminPage() {
                 <th>DEF</th>
                 <th>ATK</th>
                 <th>FIT</th>
+                <th>TEC</th>
+                <th>IQ</th>
                 <th>Total</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -176,6 +186,8 @@ export default function JugadoresAdminPage() {
                   <td>{player.defense}</td>
                   <td>{player.attack}</td>
                   <td>{player.fitness}</td>
+                  <td>{player.technique}</td>
+                  <td>{player.iq}</td>
                   <td>
                     <span className="font-bold">{player.total_score}</span>
                   </td>
@@ -312,6 +324,36 @@ export default function JugadoresAdminPage() {
                     onChange={(e) => setFormFitness(Number(e.target.value))}
                     className="w-full"
                     style={{ accentColor: 'var(--accent-secondary)' }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">
+                    Técnica: <span style={{ color: '#f59e0b' }}>{formTechnique}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={formTechnique}
+                    onChange={(e) => setFormTechnique(Number(e.target.value))}
+                    className="w-full"
+                    style={{ accentColor: '#f59e0b' }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">
+                    IQ Futbolístico: <span style={{ color: '#a78bfa' }}>{formIq}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={formIq}
+                    onChange={(e) => setFormIq(Number(e.target.value))}
+                    className="w-full"
+                    style={{ accentColor: '#a78bfa' }}
                   />
                 </div>
 

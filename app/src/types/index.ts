@@ -11,6 +11,8 @@ export interface Player {
   defense: number;
   attack: number;
   fitness: number;
+  technique: number;
+  iq: number;
   total_score: number;
   is_active: boolean;
   created_at: string;
@@ -81,6 +83,8 @@ export interface PlayerLeaderboard {
   defense: number;
   attack: number;
   fitness: number;
+  technique: number;
+  iq: number;
   total_score: number;
   matches_played: number;
   wins: number;
@@ -122,6 +126,8 @@ export interface PlayerFormData {
   defense: number;
   attack: number;
   fitness: number;
+  technique: number;
+  iq: number;
   photo?: File | null;
 }
 
