@@ -11,7 +11,10 @@ function createMockPlayers(count: number): Player[] {
     defense: 5 + (i % 5),
     attack: 5 + (i % 4),
     fitness: 5 + (i % 3),
-    total_score: 15 + (i % 5) + (i % 4) + (i % 3), // varies from 15 to 24
+    technique: 5 + (i % 2),
+    iq: 5 + (i % 3),
+    total_score: 25 + (i % 5) + (i % 4) + (i % 3),
+    country: 'es',
     is_active: true,
     created_at: new Date().toISOString(),
   }));
