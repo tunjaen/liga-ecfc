@@ -73,6 +73,14 @@ export default function LeaderboardClient({
                   </td>
                   <td>
                     <Link href={`/plantilla/${player.id}`} className="flex items-center gap-sm">
+                      {player.country && (
+                        <img
+                          src={`https://flagcdn.com/w20/${player.country.toLowerCase()}.png`}
+                          alt={player.country}
+                          title={player.country}
+                          style={{ width: '20px', height: 'auto', borderRadius: '2px' }}
+                        />
+                      )}
                       <PlayerAvatar
                         name={player.name}
                         photoUrl={getPlayerPhotoUrl(player.photo_url)}
@@ -113,6 +121,14 @@ export default function LeaderboardClient({
                         <span className="text-muted font-semibold">{index + 1}</span>
                       )}
                     </div>
+                    {player.country && (
+                      <img
+                        src={`https://flagcdn.com/w20/${player.country.toLowerCase()}.png`}
+                        alt={player.country}
+                        title={player.country}
+                        style={{ width: '20px', height: 'auto', borderRadius: '2px' }}
+                      />
+                    )}
                     <PlayerAvatar
                       name={player.name}
                       photoUrl={getPlayerPhotoUrl(player.photo_url)}
@@ -162,6 +178,14 @@ export default function LeaderboardClient({
                         <span className="text-muted font-semibold">{index + 1}</span>
                       )}
                     </div>
+                    {player.country && (
+                      <img
+                        src={`https://flagcdn.com/w20/${player.country.toLowerCase()}.png`}
+                        alt={player.country}
+                        title={player.country}
+                        style={{ width: '20px', height: 'auto', borderRadius: '2px' }}
+                      />
+                    )}
                     <PlayerAvatar
                       name={player.name}
                       photoUrl={getPlayerPhotoUrl(player.photo_url)}

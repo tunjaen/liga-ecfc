@@ -34,6 +34,14 @@ export function PlayerCard({ player, index = 0, onClick, selected }: PlayerCardP
             Puntuación: {player.total_score}
           </div>
         </div>
+        {player.country && (
+          <img
+            src={`https://flagcdn.com/w20/${player.country.toLowerCase()}.png`}
+            alt={player.country}
+            title={player.country}
+            style={{ width: '20px', height: 'auto', borderRadius: '2px' }}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-xs">

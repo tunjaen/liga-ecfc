@@ -12,13 +12,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Equipos Balanceados ⚽ | Gestión de Fútbol Amateur',
+  title: 'Equipos Balanceados ⚽ | ECFC',
   description:
     'Plataforma de gestión y balanceo de equipos para fútbol amateur. Genera equipos equilibrados, consulta estadísticas, goleadores y clasificaciones.',
   keywords: ['fútbol', 'equipos', 'balanceo', 'amateur', 'estadísticas', 'matchmaker'],
   openGraph: {
-    title: 'Equipos Balanceados ⚽',
-    description: 'Plataforma de gestión y balanceo de equipos para fútbol amateur.',
+    title: 'Equipos Balanceados ⚽ | ECFC ⚽',
+    description: 'Datos, estadísticas y rendimiento dentro y fuera del campo',
     type: 'website',
   },
 };
