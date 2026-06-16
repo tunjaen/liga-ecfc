@@ -16,7 +16,7 @@ export default async function PlantillaPage() {
   return (
     <div className="page-content">
       <div className="container">
-        <h1 className="mb-lg">👥 Plantilla</h1>
+        <h1 className="mb-lg">Plantilla</h1>
         <PlayerGridClient players={players} leaderboard={leaderboard} />
       </div>
     </div>

@@ -37,8 +37,8 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
   });
 
   return (
-    <div className="stat-radar" style={{ width: size, height: size, margin: '0 auto' }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
+    <div className="stat-radar" style={{ width: '100%', height: '100%', maxWidth: size, maxHeight: size, margin: '0 auto' }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
         {/* Grid polygons */}
         {gridLevels.map((level) => {
           const points = angles
@@ -99,7 +99,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
 
         {/* Labels */}
         {labels.map((stat, i) => {
-          const labelR = maxRadius + 16;
+          const labelR = maxRadius + 15;
           const x = center + labelR * Math.cos(angles[i]);
           const y = center + labelR * Math.sin(angles[i]);
           return (
@@ -110,7 +110,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
               textAnchor="middle"
               dominantBaseline="central"
               fill={stat.color}
-              fontSize="9"
+              fontSize="10"
               fontWeight="700"
             >
               {stat.name} {stat.value}

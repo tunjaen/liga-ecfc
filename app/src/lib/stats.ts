@@ -116,6 +116,19 @@ export async function getMatches(status?: string): Promise<MatchWithTeams[]> {
   });
 }
 
+export async function getCurrentMvpId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('matches')
+    .select('mvp_player_id')
+    .not('mvp_player_id', 'is', null)
+    .order('match_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    
+  return data?.mvp_player_id || null;
+}
+
 export async function getCurrentMatch(): Promise<MatchWithTeams | null> {
   const matches = await getMatches('published');
   return matches.length > 0 ? matches[0] : null;

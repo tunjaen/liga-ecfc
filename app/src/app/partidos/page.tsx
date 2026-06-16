@@ -15,7 +15,7 @@ export default async function PartidosPage() {
   return (
     <div className="page-content">
       <div className="container">
-        <h1 className="mb-lg">📅 Historial de Partidos</h1>
+        <h1 className="mb-lg">Historial de Partidos</h1>
 
         {matches.length > 0 ? (
           <MatchHistoryList matches={matches} />

@@ -720,7 +720,7 @@ h4 { font-size: 1.125rem; }
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-top: 1px solid var(--glass-border);
-  z-index: var(--z-sticky);
+  z-index: 9999;
   align-items: center;
   justify-content: space-around;
   padding: 0 var(--space-sm);

@@ -19,7 +19,7 @@ export default async function ClasificacionPage() {
   return (
     <div className="page-content">
       <div className="container">
-        <h1 className="mb-lg">🏅 Clasificación</h1>
+        <h1 className="mb-lg">Clasificación</h1>
         <LeaderboardClient
           leaderboard={leaderboard}
           topScorers={topScorers}

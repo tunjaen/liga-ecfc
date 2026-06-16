@@ -21,9 +21,9 @@ export function Navbar() {
     <nav className="navbar" id="main-navbar">
       <div className="navbar-inner">
         <Link href="/" className="navbar-logo">
-          <span className="navbar-logo-icon">⚽</span>
-          <span className="hide-mobile">Equipos Balanceados</span>
-          <span className="hide-desktop">EB</span>
+          <img src="/escudo.png" alt="ECFC Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          <span className="hide-mobile">ECFC</span>
+          <span className="hide-desktop">ECFC</span>
         </Link>
 
         <div className="navbar-links">

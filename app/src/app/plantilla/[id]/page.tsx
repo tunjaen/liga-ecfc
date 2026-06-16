@@ -1,7 +1,9 @@
-import { getPlayer, getPlayerStats } from '@/lib/stats';
+import { getPlayer, getPlayerStats, getCurrentMvpId } from '@/lib/stats';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
 import { StatRadar } from '@/components/players/StatRadar';
+import { FutPlayerImage } from '@/components/players/FutPlayerImage';
 import { getPlayerPhotoUrl, formatDate } from '@/lib/utils';
+import { DownloadFutCardBtn } from '@/components/players/DownloadFutCardBtn';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -26,6 +28,9 @@ export default async function PlayerDetailPage({ params }: Props) {
   if (!player) notFound();
 
   const { stats } = await getPlayerStats(id).catch(() => ({ stats: null }));
+  const currentMvpId = await getCurrentMvpId();
+  const isMvp = player.id === currentMvpId;
+  const bgImage = isMvp ? '/mvp.png' : '/default.png';
 
   return (
     <div className="page-content">
@@ -37,32 +42,35 @@ export default async function PlayerDetailPage({ params }: Props) {
 
         {/* Player Header - FUT Card Style */}
         <div
+          id="fut-card-container"
           className="fut-card relative mb-xl animate-fade-in"
           style={{
-            width: '320px',
-            height: '480px',
+            width: '100%',
+            maxWidth: '384px',
+            aspectRatio: '2/3',
+            height: 'auto',
             margin: '0 auto',
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: '24px' /* Ajustado al borde de la imagen default */
+            borderRadius: '24px'
           }}
         >
-          <img
-            src="/default.png"
-            alt="Card Background"
-            style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0, objectFit: 'cover' }}
+          <img 
+            src={bgImage} 
+            alt={isMvp ? "MVP Card Background" : "Card Background"} 
+            style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0, objectFit: 'cover' }} 
           />
-
+          
           <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
 
             {/* Top left section */}
-            <div style={{ position: 'absolute', top: '15%', left: '15%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', zIndex: 2 }}>
+            <div style={{ position: 'absolute', top: '15%', left: '15%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2%', zIndex: 2 }}>
               <div style={{
-                fontSize: '2.8rem',
+                fontSize: 'clamp(2.5rem, 12vw, 3.2rem)',
                 fontWeight: 900,
                 lineHeight: 1,
                 color: '#000',
-                WebkitTextStroke: '2px white'
+                textShadow: '-2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff'
               }}>
                 {player.total_score}
               </div>
@@ -70,38 +78,30 @@ export default async function PlayerDetailPage({ params }: Props) {
                 <img
                   src={`https://flagcdn.com/w40/${player.country.toLowerCase()}.png`}
                   alt={player.country}
-                  style={{ width: '36px', height: 'auto', border: '1px solid rgba(0,0,0,0.2)', borderRadius: '2px' }}
+                  style={{ width: 'clamp(30px, 10vw, 40px)', height: 'auto', border: '1px solid rgba(0,0,0,0.2)', borderRadius: '2px', marginTop: '20px' }}
                 />
               )}
-              <img src="/escudo.png" alt="Team Logo" style={{ width: '40px', marginTop: '6px' }} />
+              <img src="/escudo.png" alt="Team Logo" style={{ width: 'clamp(32px, 12vw, 44px)', marginTop: '20px' }} />
             </div>
 
             {/* Player Image */}
-            <div style={{ position: 'absolute', top: '10%', left: '15%', width: '228px', height: '228px', zIndex: 1 }}>
-              {player.photo_url ? (
-                <img
-                  src={getPlayerPhotoUrl(player.photo_url) || undefined}
-                  alt={player.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', borderBottom: '2px solid transparent' }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '4rem', color: '#000', opacity: 0.2, fontWeight: 900 }}>{player.name.charAt(0)}</div>
-                </div>
-              )}
+            <div style={{ position: 'absolute', top: '12%', left: '16%', width: '68%', aspectRatio: '1/1', zIndex: 1 }}>
+              <FutPlayerImage 
+                playerName={player.name} 
+                defaultPhotoUrl={getPlayerPhotoUrl(player.photo_url) || undefined} 
+              />
             </div>
 
             {/* Player Name */}
             <div style={{ position: 'absolute', top: '58%', left: 0, width: '100%', textAlign: 'center', zIndex: 2 }}>
               <h1 style={{
-                fontSize: '1.5rem',
+                fontSize: 'clamp(1.2rem, 7vw, 1.8rem)',
                 fontWeight: 900,
                 color: '#000',
                 textTransform: 'uppercase',
                 margin: 0,
                 letterSpacing: '1px',
-
-                paddingBottom: '4px',
+                paddingBottom: '2%',
                 width: '80%',
                 marginInline: 'auto'
               }}>
@@ -110,18 +110,50 @@ export default async function PlayerDetailPage({ params }: Props) {
             </div>
 
             {/* Stats Radar */}
-            <div style={{ position: 'absolute', top: '65%', left: 0, width: '100%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
-              <StatRadar
-                defense={player.defense}
-                attack={player.attack}
-                fitness={player.fitness}
-                technique={player.technique}
-                iq={player.iq}
-                size={120}
-              />
+            <div style={{ position: 'absolute', top: '62.5%', left: '0', width: '100%', height: '30%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+              <div style={{ width: '60%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <StatRadar
+                  defense={player.defense}
+                  attack={player.attack}
+                  fitness={player.fitness}
+                  technique={player.technique}
+                  iq={player.iq}
+                  size={200}
+                />
+              </div>
             </div>
 
           </div>
+        </div>
+
+        {/* Stats Bar Chart */}
+        <div className="card mb-xl animate-slide-up" style={{ padding: 'var(--space-md)', maxWidth: '384px', margin: '0 auto' }}>
+          <div className="flex flex-col gap-sm">
+            {[
+              { label: 'DEF', value: player.defense, color: 'var(--accent-primary)' },
+              { label: 'ATK', value: player.attack, color: 'var(--accent-danger)' },
+              { label: 'FIT', value: player.fitness, color: 'var(--accent-secondary)' },
+              { label: 'TEC', value: player.technique, color: '#f59e0b' },
+              { label: 'IQ', value: player.iq, color: '#a78bfa' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex items-center gap-sm">
+                <span style={{ width: '40px', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)' }}>{stat.label}</span>
+                <div style={{ flex: 1, height: '8px', background: 'var(--bg-surface)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${(stat.value / 10) * 100}%`,
+                      height: '100%',
+                      background: stat.color,
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+                <span style={{ width: '20px', textAlign: 'right', fontWeight: 800, fontSize: '0.9rem' }}>{stat.value}</span>
+              </div>
+            ))}
+          </div>
+          
+          <DownloadFutCardBtn targetId="fut-card-container" playerName={player.name} />
         </div>
 
         {/* Stats Cards */}
