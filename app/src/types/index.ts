@@ -14,6 +14,7 @@ export interface Player {
   technique: number;
   iq: number;
   total_score: number;
+  country: string;
   is_active: boolean;
   created_at: string;
 }
@@ -86,6 +87,7 @@ export interface PlayerLeaderboard {
   technique: number;
   iq: number;
   total_score: number;
+  country: string;
   matches_played: number;
   wins: number;
   losses: number;
@@ -128,6 +130,7 @@ export interface PlayerFormData {
   fitness: number;
   technique: number;
   iq: number;
+  country: string;
   photo?: File | null;
 }
 

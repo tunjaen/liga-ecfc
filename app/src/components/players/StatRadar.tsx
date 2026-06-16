@@ -9,7 +9,7 @@ interface StatRadarProps {
 
 export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 }: StatRadarProps) {
   const center = size / 2;
-  const maxRadius = (size / 2) * 0.75;
+  const maxRadius = (size / 2) * 0.65; // Reduced from 0.75 to leave more padding for labels
 
   // Pentagon: 5 axes evenly spaced, starting from top
   const numAxes = 5;
@@ -38,7 +38,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
 
   return (
     <div className="stat-radar" style={{ width: size, height: size, margin: '0 auto' }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
         {/* Grid polygons */}
         {gridLevels.map((level) => {
           const points = angles
@@ -52,7 +52,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
               key={level}
               points={points}
               fill="none"
-              stroke="rgba(148, 163, 184, 0.15)"
+              stroke="rgba(110, 110, 110, 0.99)"
               strokeWidth="1"
             />
           );
@@ -66,7 +66,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
             y1={center}
             x2={center + maxRadius * Math.cos(angle)}
             y2={center + maxRadius * Math.sin(angle)}
-            stroke="rgba(148, 163, 184, 0.1)"
+            stroke="rgba(0, 0, 0, 0.4)"
             strokeWidth="1"
           />
         ))}
@@ -74,9 +74,9 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
         {/* Stat polygon */}
         <polygon
           points={statPoints.join(' ')}
-          fill="rgba(59, 130, 246, 0.15)"
+          fill="rgba(73, 121, 197, 0.4)"
           stroke="var(--accent-primary)"
-          strokeWidth="2"
+          strokeWidth="1"
         />
 
         {/* Stat dots */}
@@ -89,9 +89,9 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
               key={stat.name}
               cx={x}
               cy={y}
-              r={4}
+              r={3}
               fill={stat.color}
-              stroke="var(--bg-primary)"
+              stroke="rgba(99, 99, 99, 0.95)"
               strokeWidth="2"
             />
           );
@@ -99,7 +99,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
 
         {/* Labels */}
         {labels.map((stat, i) => {
-          const labelR = maxRadius + 22;
+          const labelR = maxRadius + 16;
           const x = center + labelR * Math.cos(angles[i]);
           const y = center + labelR * Math.sin(angles[i]);
           return (
@@ -110,7 +110,7 @@ export function StatRadar({ defense, attack, fitness, technique, iq, size = 220 
               textAnchor="middle"
               dominantBaseline="central"
               fill={stat.color}
-              fontSize="11"
+              fontSize="9"
               fontWeight="700"
             >
               {stat.name} {stat.value}

@@ -46,34 +46,44 @@ function resolveTeamName(code: string): string {
   return TEAM_CODE_MAP[code.trim()] || code.trim();
 }
 
-const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de partidos de fútbol y devuélveme SOLO un JSON con este formato exacto (sin texto adicional ni bloques de markdown si es posible):
+const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de partidos de fútbol. Si toda la información es clara, devuélveme SOLO un JSON con este formato exacto (sin texto adicional ni bloques de markdown si es posible):
 
 {
-  "modo": "rey",
-  "fecha": "YYYY-MM-DD",
-  "mvp": "Nombre del MVP",
-  "partidos": [
-    {
-      "equipo_a": "Y",
-      "equipo_b": "B",
-      "goles_a": 2,
-      "goles_b": 1,
-      "goles": [
-        { "goleador": "Javi", "asistente": "Borja", "equipo": "Y" },
-        { "goleador": "Alex", "equipo": "Y" },
-        { "goleador": "Andres", "asistente": "Pedro", "equipo": "B" }
-      ]
-    }
-  ]
+"modo": "rey",
+"fecha": "YYYY-MM-DD",
+"mvp": "Nombre del MVP",
+"partidos": [
+{
+"equipo_a": "Y",
+"equipo_b": "B",
+"goles_a": 2,
+"goles_b": 1,
+"goles": [
+{ "goleador": "Javi", "asistente": "Borja", "equipo": "Y" },
+{ "goleador": "Alex", "equipo": "Y" },
+{ "goleador": "Andres", "asistente": "Pedro", "equipo": "B" }
+]
+}
+]
 }
 
 Reglas:
-- "modo": usa "rey" si hay varios partidos o "clasico" si solo hay uno.
-- Los equipos se codifican como: Y=Amarillo, B=Azul, R=Rojo, V=Verde.
-- Si no hay asistente, omite el campo "asistente".
-- Solo incluye partidos rellenados, ignora las filas vacías.
-- La fecha debe estar en formato YYYY-MM-DD.
-- VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.`;
+
+"modo": usa "rey" si hay varios partidos o "clasico" si solo hay uno.
+
+Los equipos se codifican como: Y=Amarillo, B=Azul, R=Rojo, V=Verde.
+
+Si no hay asistente, omite el campo "asistente".
+
+Solo incluye partidos rellenados, ignora las filas vacías.
+
+La fecha debe estar en formato YYYY-MM-DD.
+
+VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.
+
+VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Los detalles de los goles siempre tienen prioridad sobre el marcador anotado.
+
+MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en el partido 3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") y pide aclaración.`;
 
 export default function ImportarPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);

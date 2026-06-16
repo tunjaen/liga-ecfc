@@ -22,6 +22,7 @@ export default function JugadoresAdminPage() {
   const [formFitness, setFormFitness] = useState(5);
   const [formTechnique, setFormTechnique] = useState(5);
   const [formIq, setFormIq] = useState(5);
+  const [formCountry, setFormCountry] = useState('ES');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -52,6 +53,7 @@ export default function JugadoresAdminPage() {
     setFormFitness(5);
     setFormTechnique(5);
     setFormIq(5);
+    setFormCountry('ES');
     setPhotoFile(null);
     setPhotoPreview(null);
     setShowModal(true);
@@ -65,6 +67,7 @@ export default function JugadoresAdminPage() {
     setFormFitness(player.fitness);
     setFormTechnique(player.technique);
     setFormIq(player.iq);
+    setFormCountry(player.country || 'ES');
     setPhotoFile(null);
     setPhotoPreview(getPlayerPhotoUrl(player.photo_url));
     setShowModal(true);
@@ -98,6 +101,7 @@ export default function JugadoresAdminPage() {
       fitness: formFitness,
       technique: formTechnique,
       iq: formIq,
+      country: formCountry,
       photo_url: photoUrl,
     };
 
@@ -259,7 +263,22 @@ export default function JugadoresAdminPage() {
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label">Foto de perfil</label>
+                  <label className="input-label" htmlFor="player-country">País (Código ISO 2)</label>
+                  <input
+                    id="player-country"
+                    type="text"
+                    className="input uppercase"
+                    value={formCountry}
+                    onChange={(e) => setFormCountry(e.target.value.toUpperCase().slice(0, 2))}
+                    placeholder="Ej: ES, MX, AR, GB"
+                    maxLength={2}
+                    required
+                  />
+                  <p className="text-xs text-muted mt-xs">Usado para la bandera. Ej: ES (España), MX (México).</p>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Foto de Perfil</label>
                   <div className="flex items-center gap-sm">
                     {photoPreview ? (
                       <img src={photoPreview} alt="Preview" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />

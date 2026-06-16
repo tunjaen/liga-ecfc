@@ -35,33 +35,93 @@ export default async function PlayerDetailPage({ params }: Props) {
           ← Volver a la plantilla
         </Link>
 
-        {/* Player Header */}
-        <div className="card animate-fade-in" id="player-detail-card">
-          <div className="flex flex-col items-center text-center mb-lg" style={{ gap: 'var(--space-md)' }}>
-            <PlayerAvatar
-              name={player.name}
-              photoUrl={getPlayerPhotoUrl(player.photo_url)}
-              size="xl"
-            />
-            <div>
-              <h1 style={{ fontSize: '1.75rem', marginBottom: 'var(--space-xs)' }}>
+        {/* Player Header - FUT Card Style */}
+        <div
+          className="fut-card relative mb-xl animate-fade-in"
+          style={{
+            width: '320px',
+            height: '480px',
+            margin: '0 auto',
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '24px' /* Ajustado al borde de la imagen default */
+          }}
+        >
+          <img
+            src="/default.png"
+            alt="Card Background"
+            style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0, objectFit: 'cover' }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+
+            {/* Top left section */}
+            <div style={{ position: 'absolute', top: '15%', left: '15%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', zIndex: 2 }}>
+              <div style={{
+                fontSize: '2.8rem',
+                fontWeight: 900,
+                lineHeight: 1,
+                color: '#000',
+                WebkitTextStroke: '2px white'
+              }}>
+                {player.total_score}
+              </div>
+              {player.country && (
+                <img
+                  src={`https://flagcdn.com/w40/${player.country.toLowerCase()}.png`}
+                  alt={player.country}
+                  style={{ width: '36px', height: 'auto', border: '1px solid rgba(0,0,0,0.2)', borderRadius: '2px' }}
+                />
+              )}
+              <img src="/escudo.png" alt="Team Logo" style={{ width: '40px', marginTop: '6px' }} />
+            </div>
+
+            {/* Player Image */}
+            <div style={{ position: 'absolute', top: '10%', left: '15%', width: '228px', height: '228px', zIndex: 1 }}>
+              {player.photo_url ? (
+                <img
+                  src={getPlayerPhotoUrl(player.photo_url) || undefined}
+                  alt={player.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', borderBottom: '2px solid transparent' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ fontSize: '4rem', color: '#000', opacity: 0.2, fontWeight: 900 }}>{player.name.charAt(0)}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Player Name */}
+            <div style={{ position: 'absolute', top: '58%', left: 0, width: '100%', textAlign: 'center', zIndex: 2 }}>
+              <h1 style={{
+                fontSize: '1.5rem',
+                fontWeight: 900,
+                color: '#000',
+                textTransform: 'uppercase',
+                margin: 0,
+                letterSpacing: '1px',
+
+                paddingBottom: '4px',
+                width: '80%',
+                marginInline: 'auto'
+              }}>
                 {player.name}
               </h1>
-              <span className="badge badge-primary" style={{ fontSize: '0.875rem', padding: '0.375rem 1rem' }}>
-                Puntuación: {player.total_score}
-              </span>
             </div>
-          </div>
 
-          {/* Radar Chart */}
-          <StatRadar
-            defense={player.defense}
-            attack={player.attack}
-            fitness={player.fitness}
-            technique={player.technique}
-            iq={player.iq}
-            size={220}
-          />
+            {/* Stats Radar */}
+            <div style={{ position: 'absolute', top: '65%', left: 0, width: '100%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+              <StatRadar
+                defense={player.defense}
+                attack={player.attack}
+                fitness={player.fitness}
+                technique={player.technique}
+                iq={player.iq}
+                size={120}
+              />
+            </div>
+
+          </div>
         </div>
 
         {/* Stats Cards */}
