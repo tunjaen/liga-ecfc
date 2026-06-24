@@ -28,11 +28,10 @@ export function PlayerAvatar({ name, photoUrl, size = 'md', className = '' }: Pl
   }
 
   return (
-    <div
-      className={`player-avatar player-avatar-placeholder ${sizeClass} ${className}`}
-      aria-label={name}
-    >
-      {getInitials(name)}
-    </div>
+    <img
+      src="/default-player.png"
+      alt={name}
+      className={`player-avatar ${sizeClass} ${className}`}
+    />
   );
 }

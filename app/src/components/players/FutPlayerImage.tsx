@@ -74,9 +74,11 @@ export function FutPlayerImage({ playerName, defaultPhotoUrl }: Props) {
             style={{ width: '100%', height: '100%', objectFit: 'contain', borderBottom: '2px solid transparent' }}
           />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ fontSize: '4rem', color: '#000', opacity: 0.2, fontWeight: 900 }}>{playerName.charAt(0)}</div>
-          </div>
+          <img
+            src="/default-player.png"
+            alt={playerName}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', borderBottom: '2px solid transparent' }}
+          />
         )}
       </div>
     </div>
