@@ -1313,6 +1313,68 @@ h4 {
   border-top: 1px solid var(--glass-border);
 }
 
+/* ---- Avatar Tooltips ---- */
+.avatar-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.avatar-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.avatar-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--bg-secondary) transparent transparent transparent;
+}
+
+.avatar-tooltip-container:hover .avatar-tooltip,
+.avatar-tooltip-container:focus .avatar-tooltip,
+.avatar-tooltip-container:active .avatar-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.tooltip-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.tooltip-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ---- Tabs ---- */
 .tabs {
   display: flex;

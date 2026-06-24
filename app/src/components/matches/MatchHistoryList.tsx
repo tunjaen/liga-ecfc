@@ -191,14 +191,30 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                   </span>
                 </div>
                 <div className="flex justify-center" style={{ gap: '4px', flexWrap: 'wrap' }}>
-                  {winningTeam.players.map((player) => (
-                    <PlayerAvatar
-                      key={player.id}
-                      name={player.name}
-                      photoUrl={getPlayerPhotoUrl(player.photo_url)}
-                      size="sm"
-                    />
-                  ))}
+                  {winningTeam.players.map((player) => {
+                    const playerGoals = goalEvents.filter((e) => e.player_id === player.id).length;
+                    const playerAssists = assistEvents.filter((e) => e.player_id === player.id).length;
+                    return (
+                      <div key={player.id} className="avatar-tooltip-container" tabIndex={0}>
+                        <PlayerAvatar
+                          name={player.name}
+                          photoUrl={getPlayerPhotoUrl(player.photo_url)}
+                          size="sm"
+                        />
+                        <div className="avatar-tooltip">
+                          <span className="tooltip-name">{player.name}</span>
+                          {(playerGoals > 0 || playerAssists > 0) ? (
+                            <>
+                              {playerGoals > 0 && <span className="tooltip-stat">⚽ {playerGoals} {playerGoals === 1 ? 'gol' : 'goles'}</span>}
+                              {playerAssists > 0 && <span className="tooltip-stat">👟 {playerAssists} {playerAssists === 1 ? 'asist.' : 'asist.'}</span>}
+                            </>
+                          ) : (
+                            <span className="text-muted">Sin goles/asist.</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -310,6 +326,9 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                 });
                 const winnerPlayers = Array.from(winnerPlayersMap.values());
 
+                const allGoalEvents = group.matches.flatMap(m => m.events?.filter(e => e.event_type === 'goal') || []);
+                const allAssistEvents = group.matches.flatMap(m => m.events?.filter(e => e.event_type === 'assist') || []);
+
                 return winnerPlayers.length > 0 ? (
                   <div className="winner-avatars-section mb-md" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-xs mb-sm">
@@ -319,14 +338,30 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                       <Trophy size={14} style={{ color: 'var(--accent-warning)' }} />
                     </div>
                     <div className="flex justify-center" style={{ gap: '4px', flexWrap: 'wrap' }}>
-                      {winnerPlayers.map((player) => (
-                        <PlayerAvatar
-                          key={player.id}
-                          name={player.name}
-                          photoUrl={getPlayerPhotoUrl(player.photo_url)}
-                          size="sm"
-                        />
-                      ))}
+                      {winnerPlayers.map((player) => {
+                        const playerGoals = allGoalEvents.filter((e) => e.player_id === player.id).length;
+                        const playerAssists = allAssistEvents.filter((e) => e.player_id === player.id).length;
+                        return (
+                          <div key={player.id} className="avatar-tooltip-container" tabIndex={0}>
+                            <PlayerAvatar
+                              name={player.name}
+                              photoUrl={getPlayerPhotoUrl(player.photo_url)}
+                              size="sm"
+                            />
+                            <div className="avatar-tooltip">
+                              <span className="tooltip-name">{player.name}</span>
+                              {(playerGoals > 0 || playerAssists > 0) ? (
+                                <>
+                                  {playerGoals > 0 && <span className="tooltip-stat">⚽ {playerGoals} {playerGoals === 1 ? 'gol' : 'goles'}</span>}
+                                  {playerAssists > 0 && <span className="tooltip-stat">👟 {playerAssists} asist.</span>}
+                                </>
+                              ) : (
+                                <span className="text-muted">Sin goles/asist.</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null;
