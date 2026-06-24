@@ -1,4 +1,4 @@
-import { getMatches } from '@/lib/stats';
+import { getMatchesWithEvents } from '@/lib/stats';
 import type { Metadata } from 'next';
 import { MatchHistoryList } from '@/components/matches/MatchHistoryList';
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function PartidosPage() {
-  const matches = await getMatches('completed').catch(() => []);
+  const matches = await getMatchesWithEvents('completed').catch(() => []);
 
   return (
     <div className="page-content">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { MatchWithTeams } from '@/types';
+import type { MatchDetail, MatchEventWithPlayer } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
 import { getPlayerPhotoUrl } from '@/lib/utils';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 
 interface MatchHistoryListProps {
-  matches: MatchWithTeams[];
+  matches: MatchDetail[];
 }
 
 interface TeamStanding {
@@ -36,9 +36,9 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
 
   // Group matches
   // Matches with num_teams === 2 on the same date will be grouped if there's more than 1.
-  const groups: { type: 'single' | 'rey', dateStr: string, matches: MatchWithTeams[] }[] = [];
+  const groups: { type: 'single' | 'rey', dateStr: string, matches: MatchDetail[] }[] = [];
   
-  const matchesByDate = new Map<string, MatchWithTeams[]>();
+  const matchesByDate = new Map<string, MatchDetail[]>();
   matches.forEach(m => {
     const d = m.match_date;
     if (!matchesByDate.has(d)) matchesByDate.set(d, []);
@@ -70,7 +70,7 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
   // Sort groups by date descending
   groups.sort((a, b) => new Date(b.dateStr).getTime() - new Date(a.dateStr).getTime());
 
-  const calculateStandings = (groupMatches: MatchWithTeams[]): TeamStanding[] => {
+  const calculateStandings = (groupMatches: MatchDetail[]): TeamStanding[] => {
     const standingsMap = new Map<string, TeamStanding>();
 
     groupMatches.forEach(match => {
@@ -131,67 +131,129 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
     return standings;
   };
 
-  const renderSingleMatch = (match: MatchWithTeams, index: number) => (
-    <Link key={match.id} href={`/partidos/${match.id}`}>
+  const getMatchGoalEvents = (match: MatchDetail): MatchEventWithPlayer[] => {
+    return (match.events || []).filter(e => e.event_type === 'goal');
+  };
+
+  const getMatchAssistEvents = (match: MatchDetail): MatchEventWithPlayer[] => {
+    return (match.events || []).filter(e => e.event_type === 'assist');
+  };
+
+  const renderSingleMatch = (match: MatchDetail, index: number) => {
+    const winningTeam = match.teams.find(t => t.is_winner);
+    const goalEvents = getMatchGoalEvents(match);
+    const assistEvents = getMatchAssistEvents(match);
+
+    return (
       <div
-        className="card card-interactive stagger-item"
+        key={match.id}
+        className="card stagger-item"
         style={{ animationDelay: `${index * 50}ms`, marginBottom: 'var(--space-md)' }}
         id={`match-card-${match.id}`}
       >
-        <div className="flex items-center justify-between mb-md">
-          <span className="text-sm text-muted">
-            {formatDate(match.match_date)}
-          </span>
-          {match.mvp_player && (
-            <span className="badge badge-mvp">⭐ MVP: {match.mvp_player.name}</span>
-          )}
-        </div>
-
-        <div className="score-display">
-          {match.teams.map((team, i) => (
-            <div key={team.id} style={{ display: 'contents' }}>
-              {i > 0 && <span className="score-vs">VS</span>}
-              <div className="score-team">
-                <span className="score-team-name" style={{ color: team.team_color }}>
-                  {team.team_name}
-                </span>
-                <span
-                  className="score-number"
-                  style={{
-                    color: team.is_winner ? 'var(--accent-secondary)' : 'var(--text-primary)',
-                    fontSize: '2rem',
-                  }}
-                >
-                  {team.goals_scored}
-                </span>
-              </div>
+        <Link href={`/partidos/${match.id}`}>
+          <div className="card-interactive" style={{ padding: 0 }}>
+            <div className="flex items-center justify-between mb-md">
+              <span className="text-sm text-muted">
+                {formatDate(match.match_date)}
+              </span>
             </div>
-          ))}
-        </div>
 
-        {/* Player avatars */}
-        <div className="flex justify-between mt-md" style={{ gap: 'var(--space-lg)' }}>
-          {match.teams.map((team) => (
-            <div key={team.id} className="flex" style={{ gap: '-8px', flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
-              {team.players.slice(0, 6).map((player) => (
+            <div className="score-display">
+              {match.teams.map((team, i) => (
+                <div key={team.id} style={{ display: 'contents' }}>
+                  {i > 0 && <span className="score-vs">VS</span>}
+                  <div className="score-team">
+                    <span className="score-team-name" style={{ color: team.team_color }}>
+                      {team.team_name}
+                    </span>
+                    <span
+                      className="score-number"
+                      style={{
+                        color: team.is_winner ? 'var(--accent-secondary)' : 'var(--text-primary)',
+                        fontSize: '2rem',
+                      }}
+                    >
+                      {team.goals_scored}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Winning team avatars */}
+            {winningTeam && (
+              <div className="winner-avatars-section mt-md">
+                <div className="flex items-center justify-center gap-xs mb-sm">
+                  <Trophy size={14} style={{ color: 'var(--accent-warning)' }} />
+                  <span className="text-xs font-semibold" style={{ color: winningTeam.team_color }}>
+                    {winningTeam.team_name}
+                  </span>
+                </div>
+                <div className="flex justify-center" style={{ gap: '4px', flexWrap: 'wrap' }}>
+                  {winningTeam.players.map((player) => (
+                    <PlayerAvatar
+                      key={player.id}
+                      name={player.name}
+                      photoUrl={getPlayerPhotoUrl(player.photo_url)}
+                      size="sm"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Goal & assist summary */}
+            {goalEvents.length > 0 && (
+              <div className="match-events-summary mt-md">
+                {goalEvents.map((event) => {
+                  const assist = assistEvents.find(
+                    (a) => a.match_id === event.match_id && a.minute === event.minute && a.match_team_id === event.match_team_id
+                  );
+                  const team = match.teams.find((t) => t.id === event.match_team_id);
+                  return (
+                    <div key={event.id} className="match-event-row">
+                      <span className="match-event-icon">⚽</span>
+                      <span className="match-event-name" style={{ color: team?.team_color }}>
+                        {event.player.name}
+                      </span>
+                      {assist && (
+                        <>
+                          <span className="match-event-icon assist-icon">👟</span>
+                          <span className="match-event-name text-muted">
+                            {assist.player.name}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Link>
+
+        {/* MVP Section (separate, clickable, links to player profile) */}
+        {match.mvp_player && (
+          <Link href={`/plantilla/${match.mvp_player.id}`}>
+            <div className="mvp-highlight-card mt-md" id={`mvp-card-${match.id}`}>
+              <div className="mvp-highlight-inner">
+                <span className="mvp-star">⭐</span>
+                <span className="mvp-label">MVP</span>
                 <PlayerAvatar
-                  key={player.id}
-                  name={player.name}
-                  photoUrl={getPlayerPhotoUrl(player.photo_url)}
+                  name={match.mvp_player.name}
+                  photoUrl={getPlayerPhotoUrl(match.mvp_player.photo_url)}
                   size="sm"
                 />
-              ))}
-              {team.players.length > 6 && (
-                <span className="text-xs text-muted" style={{ alignSelf: 'center' }}>
-                  +{team.players.length - 6}
-                </span>
-              )}
+                <span className="mvp-name">{match.mvp_player.name}</span>
+                <ChevronDown size={14} className="mvp-arrow" />
+              </div>
             </div>
-          ))}
-        </div>
+          </Link>
+        )}
       </div>
-    </Link>
-  );
+    );
+  };
 
   return (
     <div className="flex flex-col gap-md">
@@ -230,10 +292,63 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                 {isExpanded ? <ChevronUp size={20} className="text-muted" /> : <ChevronDown size={20} className="text-muted" />}
               </div>
 
+              {/* Winning team avatars */}
+              {standings.length > 0 && (() => {
+                const winnerName = standings[0].teamName;
+                const winnerColor = standings[0].teamColor;
+                // Collect unique players from the winning team across all matches
+                const winnerPlayersMap = new Map<string, typeof group.matches[0]['teams'][0]['players'][0]>();
+                group.matches.forEach(m => {
+                  m.teams.forEach(t => {
+                    const baseName = t.team_name.replace('Equipo ', '').trim();
+                    if (baseName === winnerName) {
+                      t.players.forEach(p => {
+                        if (!winnerPlayersMap.has(p.id)) winnerPlayersMap.set(p.id, p);
+                      });
+                    }
+                  });
+                });
+                const winnerPlayers = Array.from(winnerPlayersMap.values());
+
+                return winnerPlayers.length > 0 ? (
+                  <div className="winner-avatars-section mb-md" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-xs mb-sm">
+                      <span className="text-xs font-semibold" style={{ color: winnerColor }}>
+                        {winnerName}
+                      </span>
+                      <Trophy size={14} style={{ color: 'var(--accent-warning)' }} />
+                    </div>
+                    <div className="flex justify-center" style={{ gap: '4px', flexWrap: 'wrap' }}>
+                      {winnerPlayers.map((player) => (
+                        <PlayerAvatar
+                          key={player.id}
+                          name={player.name}
+                          photoUrl={getPlayerPhotoUrl(player.photo_url)}
+                          size="sm"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* MVP Section (separate, clickable, links to player profile) */}
               {mvp && (
-                <div className="text-sm mb-md" style={{ color: 'var(--accent-warning)' }}>
-                  ⭐ <strong>MVP de la sesión:</strong> {mvp.name}
-                </div>
+                <Link href={`/plantilla/${mvp.id}`} onClick={(e) => e.stopPropagation()}>
+                  <div className="mvp-highlight-card mb-md" id={`mvp-rey-${group.dateStr}`}>
+                    <div className="mvp-highlight-inner">
+                      <span className="mvp-star">⭐</span>
+                      <span className="mvp-label">MVP de la sesión</span>
+                      <PlayerAvatar
+                        name={mvp.name}
+                        photoUrl={getPlayerPhotoUrl(mvp.photo_url)}
+                        size="sm"
+                      />
+                      <span className="mvp-name">{mvp.name}</span>
+                      <ChevronDown size={14} className="mvp-arrow" />
+                    </div>
+                  </div>
+                </Link>
               )}
 
               {/* Standings Table */}
@@ -241,7 +356,7 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                 <table className="w-full text-sm text-left" style={{ minWidth: '300px' }}>
                   <thead>
                     <tr className="text-xs text-muted border-b border-[var(--border-color)]">
-                      <th className="pb-xs">Equipo</th>
+                      <th className="pb-xs text-left">Equipo</th>
                       <th className="pb-xs text-center">Pts</th>
                       <th className="pb-xs text-center">PJ</th>
                       <th className="pb-xs text-center">G</th>
@@ -255,8 +370,8 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                     {standings.map((st, i) => (
                       <tr key={st.teamName} className="border-b border-[var(--border-color)] last:border-0">
                         <td className="py-xs font-semibold flex items-center gap-xs">
-                          {i === 0 && <Trophy size={14} style={{ color: 'var(--accent-warning)' }} />}
                           <span style={{ color: st.teamColor }}>{st.teamName}</span>
+                          {i === 0 && <Trophy size={14} style={{ color: 'var(--accent-warning)' }} />}
                         </td>
                         <td className="py-xs text-center font-bold">{st.points}</td>
                         <td className="py-xs text-center">{st.played}</td>
@@ -277,26 +392,59 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
               <div className="p-md" style={{ background: 'var(--bg-body)', borderTop: '1px solid var(--border-color)', padding: 'var(--space-md)' }}>
                 <h4 className="text-sm text-muted mb-sm uppercase tracking-wider font-semibold">Mini-partidos</h4>
                 <div className="flex flex-col gap-sm">
-                  {group.matches.map((match, i) => (
-                    <Link key={match.id} href={`/partidos/${match.id}`}>
-                      <div className="card card-interactive" style={{ padding: 'var(--space-sm)' }}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted font-bold">#{group.matches.length - i}</span>
-                          <div className="flex items-center gap-md">
-                            <span className="font-semibold" style={{ color: match.teams[0].team_color }}>
-                              {match.teams[0].team_name}
-                            </span>
-                            <span className="font-bold text-lg">
-                              {match.teams[0].goals_scored} - {match.teams[1].goals_scored}
-                            </span>
-                            <span className="font-semibold" style={{ color: match.teams[1].team_color }}>
-                              {match.teams[1].team_name}
-                            </span>
+                  {group.matches.map((match, i) => {
+                    const goalEvents = getMatchGoalEvents(match);
+                    const assistEvents = getMatchAssistEvents(match);
+
+                    return (
+                      <Link key={match.id} href={`/partidos/${match.id}`}>
+                        <div className="card card-interactive" style={{ padding: 'var(--space-sm)' }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted font-bold">#{group.matches.length - i}</span>
+                            <div className="flex items-center gap-md">
+                              <span className="font-semibold" style={{ color: match.teams[0].team_color }}>
+                                {match.teams[0].team_name}
+                              </span>
+                              <span className="font-bold text-lg">
+                                {match.teams[0].goals_scored} - {match.teams[1].goals_scored}
+                              </span>
+                              <span className="font-semibold" style={{ color: match.teams[1].team_color }}>
+                                {match.teams[1].team_name}
+                              </span>
+                            </div>
                           </div>
+
+                          {/* Goal & assist events for mini-match */}
+                          {goalEvents.length > 0 && (
+                            <div className="match-events-summary mt-sm">
+                              {goalEvents.map((event) => {
+                                const assist = assistEvents.find(
+                                  (a) => a.match_id === event.match_id && a.minute === event.minute && a.match_team_id === event.match_team_id
+                                );
+                                const team = match.teams.find((t) => t.id === event.match_team_id);
+                                return (
+                                  <div key={event.id} className="match-event-row">
+                                    <span className="match-event-icon">⚽</span>
+                                    <span className="match-event-name" style={{ color: team?.team_color }}>
+                                      {event.player.name}
+                                    </span>
+                                    {assist && (
+                                      <>
+                                        <span className="match-event-icon assist-icon">👟</span>
+                                        <span className="match-event-name text-muted">
+                                          {assist.player.name}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}

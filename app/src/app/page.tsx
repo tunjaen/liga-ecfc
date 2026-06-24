@@ -1,4 +1,4 @@
-import { getCurrentMatch, getMatches } from '@/lib/stats';
+import { getCurrentMatch, getMatchesWithEvents } from '@/lib/stats';
 import { getAppSettings } from '@/lib/settings';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
 import { getPlayerPhotoUrl, formatDate } from '@/lib/utils';
@@ -17,7 +17,7 @@ export const revalidate = 60;
 export default async function HomePage() {
   const [currentMatch, allCompletedMatches, appSettings] = await Promise.all([
     getCurrentMatch().catch(() => null),
-    getMatches('completed').catch(() => []),
+    getMatchesWithEvents('completed').catch(() => []),
     getAppSettings(),
   ]);
 

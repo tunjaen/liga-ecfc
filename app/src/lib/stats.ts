@@ -139,6 +139,71 @@ export async function getLastResult(): Promise<MatchWithTeams | null> {
   return matches.length > 0 ? matches[0] : null;
 }
 
+export async function getMatchesWithEvents(status?: string): Promise<MatchDetail[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from('matches')
+    .select(`
+      *,
+      mvp_player:players!matches_mvp_player_id_fkey(*)
+    `)
+    .order('match_date', { ascending: false });
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  const { data: matches, error } = await query;
+  if (error) throw error;
+  if (!matches || matches.length === 0) return [];
+
+  const matchIds = matches.map((m) => m.id);
+
+  // Fetch teams
+  const { data: teams, error: teamsError } = await supabase
+    .from('match_teams')
+    .select(`
+      *,
+      players:match_team_players(
+        player:players(*)
+      )
+    `)
+    .in('match_id', matchIds)
+    .order('team_number');
+
+  if (teamsError) throw teamsError;
+
+  // Fetch events for all matches
+  const { data: events, error: eventsError } = await supabase
+    .from('match_events')
+    .select(`
+      *,
+      player:players(*)
+    `)
+    .in('match_id', matchIds)
+    .order('minute', { ascending: true, nullsFirst: false });
+
+  if (eventsError) throw eventsError;
+
+  return matches.map((match) => {
+    const matchTeams = (teams || [])
+      .filter((t) => t.match_id === match.id)
+      .map((t) => ({
+        ...t,
+        players: (t.players || []).map((p: { player: Player }) => p.player),
+      })) as MatchTeamWithPlayers[];
+
+    const matchEvents = (events || []).filter((e) => e.match_id === match.id);
+
+    return {
+      ...match,
+      teams: matchTeams,
+      events: matchEvents,
+      mvp_player: match.mvp_player || null,
+    } as MatchDetail;
+  });
+}
+
 export async function getMatchDetail(id: string): Promise<MatchDetail | null> {
   const supabase = await createClient();
 
