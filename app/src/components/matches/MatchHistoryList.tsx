@@ -139,6 +139,24 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
     return (match.events || []).filter(e => e.event_type === 'assist');
   };
 
+  // Pair goals with assists by insertion order (created_at) to avoid null===null minute bug
+  const buildGoalAssistMap = (goalEvents: MatchEventWithPlayer[], assistEvents: MatchEventWithPlayer[]) => {
+    const sortedGoals = [...goalEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const sortedAssists = [...assistEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const map = new Map<string, MatchEventWithPlayer>();
+    const used = new Set<string>();
+    for (const goal of sortedGoals) {
+      const match = sortedAssists.find(
+        (a) => !used.has(a.id) && a.match_team_id === goal.match_team_id && a.player_id !== goal.player_id && new Date(a.created_at).getTime() >= new Date(goal.created_at).getTime()
+      );
+      if (match) {
+        map.set(goal.id, match);
+        used.add(match.id);
+      }
+    }
+    return map;
+  };
+
   const renderSingleMatch = (match: MatchDetail, index: number) => {
     const winningTeam = match.teams.find(t => t.is_winner);
     const goalEvents = getMatchGoalEvents(match);
@@ -220,32 +238,33 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
             )}
 
             {/* Goal & assist summary */}
-            {goalEvents.length > 0 && (
-              <div className="match-events-summary mt-md">
-                {goalEvents.map((event) => {
-                  const assist = assistEvents.find(
-                    (a) => a.match_id === event.match_id && a.minute === event.minute && a.match_team_id === event.match_team_id
-                  );
-                  const team = match.teams.find((t) => t.id === event.match_team_id);
-                  return (
-                    <div key={event.id} className="match-event-row">
-                      <span className="match-event-icon">⚽</span>
-                      <span className="match-event-name" style={{ color: team?.team_color }}>
-                        {event.player.name}
-                      </span>
-                      {assist && (
-                        <>
-                          <span className="match-event-icon assist-icon">👟</span>
-                          <span className="match-event-name text-muted">
-                            {assist.player.name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {goalEvents.length > 0 && (() => {
+              const goalAssistMap = buildGoalAssistMap(goalEvents, assistEvents);
+              return (
+                <div className="match-events-summary mt-md">
+                  {goalEvents.map((event) => {
+                    const assist = goalAssistMap.get(event.id);
+                    const team = match.teams.find((t) => t.id === event.match_team_id);
+                    return (
+                      <div key={event.id} className="match-event-row">
+                        <span className="match-event-icon">⚽</span>
+                        <span className="match-event-name" style={{ color: team?.team_color }}>
+                          {event.player.name}
+                        </span>
+                        {assist && (
+                          <>
+                            <span className="match-event-icon assist-icon">👟</span>
+                            <span className="match-event-name text-muted">
+                              {assist.player.name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </Link>
 
@@ -450,32 +469,33 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                           </div>
 
                           {/* Goal & assist events for mini-match */}
-                          {goalEvents.length > 0 && (
-                            <div className="match-events-summary mt-sm">
-                              {goalEvents.map((event) => {
-                                const assist = assistEvents.find(
-                                  (a) => a.match_id === event.match_id && a.minute === event.minute && a.match_team_id === event.match_team_id
-                                );
-                                const team = match.teams.find((t) => t.id === event.match_team_id);
-                                return (
-                                  <div key={event.id} className="match-event-row">
-                                    <span className="match-event-icon">⚽</span>
-                                    <span className="match-event-name" style={{ color: team?.team_color }}>
-                                      {event.player.name}
-                                    </span>
-                                    {assist && (
-                                      <>
-                                        <span className="match-event-icon assist-icon">👟</span>
-                                        <span className="match-event-name text-muted">
-                                          {assist.player.name}
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                          {goalEvents.length > 0 && (() => {
+                            const goalAssistMap = buildGoalAssistMap(goalEvents, assistEvents);
+                            return (
+                              <div className="match-events-summary mt-sm">
+                                {goalEvents.map((event) => {
+                                  const assist = goalAssistMap.get(event.id);
+                                  const team = match.teams.find((t) => t.id === event.match_team_id);
+                                  return (
+                                    <div key={event.id} className="match-event-row">
+                                      <span className="match-event-icon">⚽</span>
+                                      <span className="match-event-name" style={{ color: team?.team_color }}>
+                                        {event.player.name}
+                                      </span>
+                                      {assist && (
+                                        <>
+                                          <span className="match-event-icon assist-icon">👟</span>
+                                          <span className="match-event-name text-muted">
+                                            {assist.player.name}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </Link>
                     );

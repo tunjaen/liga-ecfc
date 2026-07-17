@@ -124,37 +124,60 @@ export default async function MatchDetailPage({ params }: Props) {
         </div>
 
         {/* Goal Timeline */}
-        {goalEvents.length > 0 && (
-          <div className="card animate-slide-up">
-            <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-md)' }}>⚽ Goles del partido</h3>
-            <div className="timeline">
-              {goalEvents.map((event) => {
-                const assist = assistEvents.find(
-                  (a) => a.match_id === event.match_id && a.minute === event.minute && a.match_team_id === event.match_team_id
-                );
-                const team = match.teams.find((t) => t.id === event.match_team_id);
+        {goalEvents.length > 0 && (() => {
+          // Sort events by created_at to pair goals with their assists by insertion order
+          const sortedGoals = [...goalEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          const sortedAssists = [...assistEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-                return (
-                  <div key={event.id} className="timeline-item">
-                    <div className="timeline-icon goal" style={{ borderLeft: `3px solid ${team?.team_color || 'var(--accent-goal)'}` }}>
-                      ⚽
-                    </div>
-                    <div className="timeline-content">
-                      <div className="timeline-player">{event.player.name}</div>
-                      <div className="timeline-detail">
-                        {event.minute && <span>{event.minute}&apos; · </span>}
-                        <span style={{ color: team?.team_color }}>{team?.team_name}</span>
-                        {assist && (
-                          <span> · Asist: {assist.player.name}</span>
-                        )}
+          // Build a map: for each goal, find the assist inserted right after it
+          const goalAssistMap = new Map<string, typeof assistEvents[0]>();
+          const usedAssists = new Set<string>();
+
+          for (const goal of sortedGoals) {
+            // Find the first unused assist from the same team that was created right after this goal
+            const matchingAssist = sortedAssists.find(
+              (a) =>
+                !usedAssists.has(a.id) &&
+                a.match_team_id === goal.match_team_id &&
+                a.player_id !== goal.player_id &&
+                new Date(a.created_at).getTime() >= new Date(goal.created_at).getTime()
+            );
+            if (matchingAssist) {
+              goalAssistMap.set(goal.id, matchingAssist);
+              usedAssists.add(matchingAssist.id);
+            }
+          }
+
+          return (
+            <div className="card animate-slide-up">
+              <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-md)' }}>⚽ Goles del partido</h3>
+              <div className="timeline">
+                {sortedGoals.map((event) => {
+                  const assist = goalAssistMap.get(event.id);
+                  const team = match.teams.find((t) => t.id === event.match_team_id);
+
+                  return (
+                    <div key={event.id} className="timeline-item">
+                      <div className="timeline-icon goal" style={{ borderLeft: `3px solid ${team?.team_color || 'var(--accent-goal)'}` }}>
+                        ⚽
+                      </div>
+                      <div className="timeline-content">
+                        <div className="timeline-player">{event.player.name}</div>
+                        <div className="timeline-detail">
+                          {event.minute && <span>{event.minute}&apos; · </span>}
+                          <span style={{ color: team?.team_color }}>{team?.team_name}</span>
+                          {assist && (
+                            <span> · Asist: {assist.player.name}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
