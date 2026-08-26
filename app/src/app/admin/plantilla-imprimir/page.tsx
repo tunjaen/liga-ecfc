@@ -203,27 +203,33 @@ export default function PlantillaImprimirPage() {
           display: flex;
           gap: 8px;
           flex-wrap: wrap;
-          margin-bottom: 6px;
-          font-size: 9px;
+          margin-bottom: 8px;
+          font-size: 14px;
         }
         .print-area .team-roster-block {
-          border: 1px solid #000;
-          padding: 3px 6px;
+          border: 1.5px solid #000;
+          padding: 5px 8px;
           flex: 1;
           min-width: 100px;
         }
         .print-area .team-roster-block strong {
           display: block;
-          margin-bottom: 1px;
-          font-size: 10px;
-          border-bottom: 1px solid #ccc;
-          padding-bottom: 1px;
+          margin-bottom: 3px;
+          font-size: 15px;
+          border-bottom: 1.5px solid #000;
+          padding-bottom: 3px;
         }
-        .print-area .example-row td {
-          font-style: italic;
-          color: #888;
-          font-size: 9px;
+        .print-area .uppercase-notice {
+          text-align: center;
+          font-size: 14px;
+          font-weight: bold;
+          border: 2px solid #000;
+          padding: 4px;
+          margin-bottom: 8px;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
         }
+
         .print-area .mvp-box {
           border: 2px solid #000;
           padding: 6px 12px;
@@ -261,14 +267,6 @@ function ReyPlantilla({ match }: { match: MatchData }) {
   const codesStr = teamCodes.map(t => `${t.code} = ${t.name}`).join('  |  ');
   const dateStr = new Date(match.match_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  // First player names for example
-  const exTeamA = teamCodes[0];
-  const exTeamB = teamCodes[1];
-  const exPlayer1 = exTeamA?.players[0]?.name || 'Javi';
-  const exPlayer2 = exTeamA?.players[1]?.name || 'Alex';
-  const exPlayer3 = exTeamB?.players[0]?.name || 'Andres';
-  const exPlayer4 = exTeamB?.players[1]?.name || 'Luis';
-
   const allRows = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (
@@ -282,6 +280,8 @@ function ReyPlantilla({ match }: { match: MatchData }) {
           </div>
         </div>
       </div>
+
+      <div className="uppercase-notice">✏️ RELLENAR TODO EN MAYÚSCULAS</div>
 
       {/* Player rosters */}
       <div className="team-roster">
@@ -299,16 +299,11 @@ function ReyPlantilla({ match }: { match: MatchData }) {
         <thead>
           <tr>
             <th rowSpan={2} style={{ width: '18px' }}>#</th>
-            <th rowSpan={2} style={{ width: '28px' }}>Eq.A</th>
-            <th rowSpan={2} style={{ width: '28px' }}>Eq.B</th>
-            <th colSpan={2} style={{ width: '36px' }}>Res.</th>
             <th colSpan={3}>GOL 1</th>
             <th colSpan={3}>GOL 2</th>
             <th colSpan={3}>GOL 3</th>
           </tr>
           <tr>
-            <th style={{ fontSize: '8px' }}>A</th>
-            <th style={{ fontSize: '8px' }}>B</th>
             <th style={{ fontSize: '7px' }}>Gol.</th>
             <th style={{ fontSize: '7px' }}>Asis.</th>
             <th style={{ fontSize: '7px' }}>Eq</th>
@@ -321,30 +316,9 @@ function ReyPlantilla({ match }: { match: MatchData }) {
           </tr>
         </thead>
         <tbody>
-          {/* Example row */}
-          <tr className="example-row" style={{ height: '22px' }}>
-            <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#888' }}>ej.</td>
-            <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
-            <td style={{ textAlign: 'center' }}>{exTeamB?.code}</td>
-            <td style={{ textAlign: 'center' }}>2</td>
-            <td style={{ textAlign: 'center' }}>1</td>
-            <td>{exPlayer1}</td>
-            <td>{exPlayer2}</td>
-            <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
-            <td>{exPlayer2}</td>
-            <td>—</td>
-            <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
-            <td>{exPlayer3}</td>
-            <td>{exPlayer4}</td>
-            <td style={{ textAlign: 'center' }}>{exTeamB?.code}</td>
-          </tr>
           {allRows.map(n => (
             <tr key={n} style={{ height: '24px' }}>
               <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{n}</td>
-              <td style={{ textAlign: 'center' }}></td>
-              <td style={{ textAlign: 'center' }}></td>
-              <td style={{ textAlign: 'center' }}></td>
-              <td style={{ textAlign: 'center' }}></td>
               <td></td><td></td><td></td>
               <td></td><td></td><td></td>
               <td></td><td></td><td></td>
@@ -376,10 +350,7 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
   const codesStr = teamCodes.map(t => `${t.code} = ${t.name}`).join('  |  ');
   const dateStr = new Date(match.match_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  const goalRows = Array.from({ length: 20 }, (_, i) => i + 1);
-  const exTeamA = teamCodes[0];
-  const exPlayer1 = exTeamA?.players[0]?.name || 'Javi';
-  const exPlayer2 = exTeamA?.players[1]?.name || 'Alex';
+  const goalRows = Array.from({ length: 30 }, (_, i) => i + 1);
 
   return (
     <div className="print-page">
@@ -393,6 +364,8 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
         </div>
       </div>
 
+      <div className="uppercase-notice">✏️ RELLENAR TODO EN MAYÚSCULAS</div>
+
       {/* Player rosters */}
       <div className="team-roster">
         {teamCodes.map(t => (
@@ -405,28 +378,6 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
         ))}
       </div>
 
-      {/* Scoreboard */}
-      <div style={{ marginBottom: '8px' }}>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: '100px' }}>Marcador Final</th>
-              {teamCodes.map(t => (
-                <th key={t.code}>{t.code} ({t.name})</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr style={{ height: '28px' }}>
-              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>Goles</td>
-              {teamCodes.map(t => (
-                <td key={t.code} style={{ textAlign: 'center', fontSize: '14px' }}></td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
       {/* Goals table */}
       <table>
         <thead>
@@ -434,26 +385,14 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
             <th style={{ width: '22px' }}>#</th>
             <th>Goleador</th>
             <th>Asistente</th>
-            <th style={{ width: '30px' }}>Eq</th>
-            <th style={{ width: '30px' }}>Min.</th>
           </tr>
         </thead>
         <tbody>
-          {/* Example row */}
-          <tr className="example-row" style={{ height: '22px' }}>
-            <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#888' }}>ej.</td>
-            <td>{exPlayer1}</td>
-            <td>{exPlayer2}</td>
-            <td style={{ textAlign: 'center' }}>{exTeamA?.code}</td>
-            <td style={{ textAlign: 'center' }}>5</td>
-          </tr>
           {goalRows.map(n => (
-            <tr key={n} style={{ height: '24px' }}>
+            <tr key={n} style={{ height: '22px' }}>
               <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{n}</td>
               <td></td>
               <td></td>
-              <td style={{ textAlign: 'center' }}></td>
-              <td style={{ textAlign: 'center' }}></td>
             </tr>
           ))}
         </tbody>

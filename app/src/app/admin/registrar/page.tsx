@@ -178,32 +178,42 @@ export default function RegistrarPage() {
 
     const events = match.events || [];
     if (events.length > 0) {
-      // Ordenar por created_at para respetar el orden original de inserción
-      const sorted = [...events].sort(
-        (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      
       const loadedGoals: GoalEntry[] = [];
-      for (let i = 0; i < sorted.length; i++) {
-        const e = sorted[i];
-        if (e.event_type !== 'goal') continue;
-        
-        let assisterId = '';
-        // Solo vincular asistencia si el evento INMEDIATAMENTE siguiente es 'assist' del mismo equipo
-        const next = sorted[i + 1];
-        if (next && next.event_type === 'assist' && next.match_team_id === e.match_team_id) {
-          assisterId = next.player_id;
-          i++; // consumir el evento de asistencia
-        }
-        
-        loadedGoals.push({
-          id: crypto.randomUUID(),
-          teamId: e.match_team_id,
-          scorerId: e.player_id,
-          assisterId,
-          minute: e.minute ? e.minute.toString() : ''
+
+      // Agrupar eventos por equipo preservando el orden original de la DB
+      const eventsByTeam = new Map<string, typeof events>();
+      events.forEach((e: any, index: number) => {
+        if (!eventsByTeam.has(e.match_team_id)) eventsByTeam.set(e.match_team_id, []);
+        eventsByTeam.get(e.match_team_id)!.push({ ...e, origIndex: index });
+      });
+
+      eventsByTeam.forEach((teamEvents) => {
+        const sorted = [...teamEvents].sort((a: any, b: any) => {
+          const timeDiff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return timeDiff !== 0 ? timeDiff : a.origIndex - b.origIndex;
         });
-      }
+
+        for (let i = 0; i < sorted.length; i++) {
+          const e = sorted[i];
+          if (e.event_type !== 'goal') continue;
+
+          let assisterId = '';
+          const next = sorted[i + 1];
+          if (next && next.event_type === 'assist') {
+            assisterId = next.player_id;
+            i++; // consumir el evento de asistencia
+          }
+
+          loadedGoals.push({
+            id: crypto.randomUUID(),
+            teamId: e.match_team_id,
+            scorerId: e.player_id,
+            assisterId,
+            minute: e.minute ? e.minute.toString() : ''
+          });
+        }
+      });
+
       setGoals(loadedGoals);
     } else {
       setGoals([]);
