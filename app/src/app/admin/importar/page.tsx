@@ -81,9 +81,11 @@ La fecha debe estar en formato YYYY-MM-DD.
 
 VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.
 
-VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Los detalles de los goles siempre tienen prioridad sobre el marcador anotado.
+VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Si la columna "EQ" no esta rellenada, determina qué equipo ha ganado en base a quien ha metido los goles, si tienes alguna duda con algun nombre puedes cruzarlos en la parte superior donde aparecen a que equipo pertenece cada jugador 
 
-MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en el partido 3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") y pide aclaración.`;
+MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en el partido 3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") y pide aclaración.
+
+Antes del JSON quiero ver un resumen del partido, si ha sido rey de la pista quiero saber los puntos totales de cada equipo. Y los 3 jugadores con más goles anotados y más asistencias.`;
 
 export default function ImportarPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);

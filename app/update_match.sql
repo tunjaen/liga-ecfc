@@ -7,13 +7,12 @@ DECLARE
   v_mvp_id UUID;
   
   -- Variables para jugadores
-  v_player_gonzalo_id UUID;
+  v_player_flynn_id UUID;
   v_player_lucian_id UUID;
   v_player_vito_id UUID;
   v_player_edu_id UUID;
   v_player_rubn_id UUID;
   v_player_andoni_id UUID;
-  v_player_flynn_id UUID;
   v_player_mateo_id UUID;
   v_player_seba_id UUID;
   v_player_borja_id UUID;
@@ -40,13 +39,12 @@ BEGIN
   UPDATE match_teams SET goals_scored = 9, is_winner = false WHERE id = v_team_b_id;
 
   -- 4. Obtener IDs de Jugadores
-  SELECT id INTO v_player_gonzalo_id FROM players WHERE name ILIKE '%Gonzalo%' LIMIT 1;
+  SELECT id INTO v_player_flynn_id FROM players WHERE name ILIKE '%Flynn%' LIMIT 1;
   SELECT id INTO v_player_lucian_id FROM players WHERE name ILIKE '%Lucian%' LIMIT 1;
   SELECT id INTO v_player_vito_id FROM players WHERE name ILIKE '%Vito%' LIMIT 1;
   SELECT id INTO v_player_edu_id FROM players WHERE name ILIKE '%Edu%' LIMIT 1;
   SELECT id INTO v_player_rubn_id FROM players WHERE name ILIKE '%Rubén%' LIMIT 1;
   SELECT id INTO v_player_andoni_id FROM players WHERE name ILIKE '%Andoni%' LIMIT 1;
-  SELECT id INTO v_player_flynn_id FROM players WHERE name ILIKE '%Flynn%' LIMIT 1;
   SELECT id INTO v_player_mateo_id FROM players WHERE name ILIKE '%Mateo%' LIMIT 1;
   SELECT id INTO v_player_seba_id FROM players WHERE name ILIKE '%Seba%' LIMIT 1;
   SELECT id INTO v_player_borja_id FROM players WHERE name ILIKE '%Borja%' LIMIT 1;
@@ -54,7 +52,7 @@ BEGIN
   SELECT id INTO v_player_miky_id FROM players WHERE name ILIKE '%Miky%' LIMIT 1;
 
   -- Actualizar MVP
-  UPDATE matches SET mvp_player_id = v_player_gonzalo_id WHERE id = v_match_id;
+  UPDATE matches SET mvp_player_id = v_player_flynn_id WHERE id = v_match_id;
 
   -- 5. Borrar eventos anteriores
   DELETE FROM match_events WHERE match_id = v_match_id;

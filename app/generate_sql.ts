@@ -3,7 +3,7 @@ import * as fs from 'fs';
 const data = {
   "modo": "clasico",
   "fecha": "2026-07-07",
-  "mvp": "Gonzalo",
+  "mvp": "Flynn",
   "partidos": [
     {
       "equipo_a": "Y",
