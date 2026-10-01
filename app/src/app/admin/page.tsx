@@ -1,4 +1,5 @@
 import { getPlayers, getMatches } from '@/lib/stats';
+import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { Users, Shuffle, ClipboardCheck, Printer, Upload } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -58,6 +59,23 @@ export default async function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {pendingMatch && (
+        <div className="card mb-lg flex items-center justify-between gap-md" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+          <div className="flex items-center gap-sm">
+            <span style={{ fontSize: '1.25rem' }}>📋</span>
+            <div>
+              <div className="font-semibold text-sm">Convocatoria Activa ({formatDate(pendingMatch.match_date)})</div>
+              <div className="text-xs text-muted">Hay una convocatoria publicada. Puedes registrar los resultados o cancelarla si el partido fue suspendido.</div>
+            </div>
+          </div>
+          <Link href="/admin/registrar">
+            <button className="btn btn-secondary btn-sm">
+              Gestionar / Cancelar
+            </button>
+          </Link>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <h2 className="section-title">Acciones Rápidas</h2>

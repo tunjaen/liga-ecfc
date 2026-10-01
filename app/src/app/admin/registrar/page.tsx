@@ -462,20 +462,34 @@ export default function RegistrarPage() {
         <>
           {/* Select Match */}
           {!editingMatch && (
-            <div className="input-group mb-lg">
-              <label className="input-label">Seleccionar Partido o Convocatoria</label>
-              <select
-                className="select"
-                value={selectedMatchId}
-                onChange={(e) => handleMatchSelect(e.target.value)}
-              >
-                <option value="">-- Selecciona una convocatoria --</option>
-                {matches.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {formatDate(m.match_date)} — {m.num_teams} Equipos
-                  </option>
-                ))}
-              </select>
+            <div className="card mb-lg flex items-center justify-between gap-md" style={{ flexWrap: 'wrap' }}>
+              <div className="input-group flex-1" style={{ minWidth: '250px' }}>
+                <label className="input-label">Seleccionar Partido o Convocatoria</label>
+                <select
+                  className="select"
+                  value={selectedMatchId}
+                  onChange={(e) => handleMatchSelect(e.target.value)}
+                >
+                  <option value="">-- Selecciona una convocatoria --</option>
+                  {matches.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {formatDate(m.match_date)} — {m.num_teams} Equipos
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedMatchId && !editingMatch && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.4)', alignSelf: 'flex-end', marginBottom: '2px' }}
+                  onClick={() => handleDeleteMatch(selectedMatchId)}
+                  title="Cancelar y eliminar esta convocatoria"
+                >
+                  <Trash2 size={16} />
+                  Cancelar / Borrar Convocatoria
+                </button>
+              )}
             </div>
           )}
 
