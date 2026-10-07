@@ -1,6 +1,6 @@
 import { getMatchDetail } from '@/lib/stats';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
-import { getPlayerPhotoUrl, formatDate } from '@/lib/utils';
+import { getPlayerPhotoUrl, formatDate, buildGoalAssistMap } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -125,28 +125,8 @@ export default async function MatchDetailPage({ params }: Props) {
 
         {/* Goal Timeline */}
         {goalEvents.length > 0 && (() => {
-          // Sort events by created_at to pair goals with their assists by insertion order
           const sortedGoals = [...goalEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-          const sortedAssists = [...assistEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-          // Build a map: for each goal, find the assist inserted right after it
-          const goalAssistMap = new Map<string, typeof assistEvents[0]>();
-          const usedAssists = new Set<string>();
-
-          for (const goal of sortedGoals) {
-            // Find the first unused assist from the same team that was created right after this goal
-            const matchingAssist = sortedAssists.find(
-              (a) =>
-                !usedAssists.has(a.id) &&
-                a.match_team_id === goal.match_team_id &&
-                a.player_id !== goal.player_id &&
-                new Date(a.created_at).getTime() >= new Date(goal.created_at).getTime()
-            );
-            if (matchingAssist) {
-              goalAssistMap.set(goal.id, matchingAssist);
-              usedAssists.add(matchingAssist.id);
-            }
-          }
+          const goalAssistMap = buildGoalAssistMap(match.events);
 
           return (
             <div className="card animate-slide-up">

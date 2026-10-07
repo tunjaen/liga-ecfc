@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import type { MatchDetail, MatchEventWithPlayer } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, getPlayerPhotoUrl, buildGoalAssistMap } from '@/lib/utils';
 import { PlayerAvatar } from '@/components/players/PlayerAvatar';
-import { getPlayerPhotoUrl } from '@/lib/utils';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 
@@ -139,24 +138,6 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
     return (match.events || []).filter(e => e.event_type === 'assist');
   };
 
-  // Pair goals with assists by insertion order (created_at) to avoid null===null minute bug
-  const buildGoalAssistMap = (goalEvents: MatchEventWithPlayer[], assistEvents: MatchEventWithPlayer[]) => {
-    const sortedGoals = [...goalEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const sortedAssists = [...assistEvents].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const map = new Map<string, MatchEventWithPlayer>();
-    const used = new Set<string>();
-    for (const goal of sortedGoals) {
-      const match = sortedAssists.find(
-        (a) => !used.has(a.id) && a.match_team_id === goal.match_team_id && a.player_id !== goal.player_id && new Date(a.created_at).getTime() >= new Date(goal.created_at).getTime()
-      );
-      if (match) {
-        map.set(goal.id, match);
-        used.add(match.id);
-      }
-    }
-    return map;
-  };
-
   const renderSingleMatch = (match: MatchDetail, index: number) => {
     const winningTeam = match.teams.find(t => t.is_winner);
     const goalEvents = getMatchGoalEvents(match);
@@ -239,7 +220,7 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
 
             {/* Goal & assist summary */}
             {goalEvents.length > 0 && (() => {
-              const goalAssistMap = buildGoalAssistMap(goalEvents, assistEvents);
+              const goalAssistMap = buildGoalAssistMap(match.events);
               return (
                 <div className="match-events-summary mt-md">
                   {goalEvents.map((event) => {
@@ -470,7 +451,7 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
 
                           {/* Goal & assist events for mini-match */}
                           {goalEvents.length > 0 && (() => {
-                            const goalAssistMap = buildGoalAssistMap(goalEvents, assistEvents);
+                            const goalAssistMap = buildGoalAssistMap(match.events);
                             return (
                               <div className="match-events-summary mt-sm">
                                 {goalEvents.map((event) => {

@@ -1,4 +1,4 @@
-import type { Player } from '@/types';
+import type { Player, MatchEventWithPlayer } from '@/types';
 
 /**
  * Returns the player's initials (first letter of first and last name).
@@ -94,3 +94,37 @@ export function calculateWinrate(wins: number, totalPlayed: number): number {
 export function sortPlayersByScore(players: Player[]): Player[] {
   return [...players].sort((a, b) => b.total_score - a.total_score);
 }
+
+/**
+ * Pairs goals with their corresponding assists by original insertion order (created_at).
+ * An assist event immediately follows its goal event for the same match team.
+ */
+export function buildGoalAssistMap(events: MatchEventWithPlayer[]): Map<string, MatchEventWithPlayer> {
+  const sorted = [...(events || [])].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  const map = new Map<string, MatchEventWithPlayer>();
+  const eventsByTeam = new Map<string, MatchEventWithPlayer[]>();
+
+  sorted.forEach((e) => {
+    if (!eventsByTeam.has(e.match_team_id)) eventsByTeam.set(e.match_team_id, []);
+    eventsByTeam.get(e.match_team_id)!.push(e);
+  });
+
+  eventsByTeam.forEach((teamEvents) => {
+    for (let i = 0; i < teamEvents.length; i++) {
+      const current = teamEvents[i];
+      if (current.event_type !== 'goal') continue;
+
+      const next = teamEvents[i + 1];
+      if (next && next.event_type === 'assist') {
+        map.set(current.id, next);
+        i++; // skip assist event
+      }
+    }
+  });
+
+  return map;
+}
+

@@ -181,7 +181,7 @@ export async function getMatchesWithEvents(status?: string): Promise<MatchDetail
       player:players(*)
     `)
     .in('match_id', matchIds)
-    .order('minute', { ascending: true, nullsFirst: false });
+    .order('created_at', { ascending: true });
 
   if (eventsError) throw eventsError;
 
@@ -238,7 +238,7 @@ export async function getMatchDetail(id: string): Promise<MatchDetail | null> {
       player:players(*)
     `)
     .eq('match_id', id)
-    .order('minute', { ascending: true, nullsFirst: false });
+    .order('created_at', { ascending: true });
 
   const matchTeams = (teams || []).map((t) => ({
     ...t,
