@@ -69,23 +69,25 @@ const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de partidos de
 
 Reglas:
 
-"modo": usa "rey" si hay varios partidos o "clasico" si solo hay uno.
+1. MODO DE JUEGO: usa "rey" si hay varios partidos o "clasico" si solo hay uno.
 
-Los equipos se codifican como: Y=Amarillo, B=Azul, R=Rojo, V=Verde.
+2. CÓDIGOS DE EQUIPO: Y=Amarillo, B=Azul, R=Rojo, V=Verde.
 
-Si no hay asistente, omite el campo "asistente".
+3. ANCLAJE DE FILAS Y FOTOS INCLINADAS (MUY IMPORTANTE): La foto puede estar inclinada, rotada o con perspectiva. Para evitar confundir filas o saltar de línea horizontalmente, utiliza los NÚMEROS DE FILA (#) presentes tanto a la IZQUIERDA como a la DERECHA de cada fila de la tabla como anclas de alineación horizontal. Procesa estricta y linealmente cada fila completa verificando que el # de la izquierda coincide con el # de la derecha antes de pasar a la siguiente fila.
 
-Solo incluye partidos rellenados, ignora las filas vacías.
+4. ASISTENCIAS: Si no hay asistente, omite el campo "asistente".
 
-La fecha debe estar en formato YYYY-MM-DD.
+5. FILAS VACÍAS: Solo incluye partidos rellenados, ignora las filas totalmente vacías.
 
-VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.
+6. FECHA: La fecha debe estar en formato YYYY-MM-DD.
 
-VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Si la columna "EQ" no esta rellenada, determina qué equipo ha ganado en base a quien ha metido los goles, si tienes alguna duda con algun nombre puedes cruzarlos en la parte superior donde aparecen a que equipo pertenece cada jugador 
+7. VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.
 
-MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en el partido 3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") y pide aclaración.
+8. VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Si la columna "EQ" no está rellenada, determina qué equipo ha ganado en base a quién ha metido los goles, cruzando los nombres con la lista superior de equipos si es necesario.
 
-Antes del JSON quiero ver un resumen del partido, si ha sido rey de la pista quiero saber los puntos totales de cada equipo. Y los 3 jugadores con más goles anotados y más asistencias.`;
+9. MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en la fila #3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") mencionando siempre el número de fila (#).
+
+Antes del JSON quiero ver un resumen del partido, si ha sido rey de la pista o clasico. Tambien quiero saber el resultado final. Y los 3 jugadores con más goles anotados y más asistencias.`;
 
 export default function ImportarPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);

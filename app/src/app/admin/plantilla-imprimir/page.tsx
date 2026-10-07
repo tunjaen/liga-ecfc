@@ -27,7 +27,7 @@ function getTeamCode(teamName: string): string {
 export default function PlantillaImprimirPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState('');
-  const [mode, setMode] = useState<'rey' | 'clasico'>('rey');
+  const [mode, setMode] = useState<'rey' | 'clasico'>('clasico');
   const [loading, setLoading] = useState(true);
 
   const supabase = createClient();
@@ -180,6 +180,12 @@ export default function PlantillaImprimirPage() {
           text-transform: uppercase;
           letter-spacing: 0.02em;
         }
+        .print-area .row-num {
+          text-align: center;
+          font-weight: bold;
+          background: #f0f0f0;
+          font-size: 10px;
+        }
         .print-area .write-line {
           border-bottom: 1px solid #999;
           min-width: 60px;
@@ -302,6 +308,7 @@ function ReyPlantilla({ match }: { match: MatchData }) {
             <th colSpan={3}>GOL 1</th>
             <th colSpan={3}>GOL 2</th>
             <th colSpan={3}>GOL 3</th>
+            <th rowSpan={2} style={{ width: '18px' }}>#</th>
           </tr>
           <tr>
             <th style={{ fontSize: '7px' }}>Gol.</th>
@@ -318,10 +325,11 @@ function ReyPlantilla({ match }: { match: MatchData }) {
         <tbody>
           {allRows.map(n => (
             <tr key={n} style={{ height: '24px' }}>
-              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{n}</td>
+              <td className="row-num">{n}</td>
               <td></td><td></td><td></td>
               <td></td><td></td><td></td>
               <td></td><td></td><td></td>
+              <td className="row-num">{n}</td>
             </tr>
           ))}
         </tbody>
@@ -385,14 +393,16 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
             <th style={{ width: '22px' }}>#</th>
             <th>Goleador</th>
             <th>Asistente</th>
+            <th style={{ width: '22px' }}>#</th>
           </tr>
         </thead>
         <tbody>
           {goalRows.map(n => (
             <tr key={n} style={{ height: '22px' }}>
-              <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{n}</td>
+              <td className="row-num">{n}</td>
               <td></td>
               <td></td>
+              <td className="row-num">{n}</td>
             </tr>
           ))}
         </tbody>
