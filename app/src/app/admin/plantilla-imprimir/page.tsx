@@ -304,6 +304,27 @@ export default function PlantillaImprimirPage() {
           box-sizing: border-box;
           flex-shrink: 0;
         }
+        .print-area .tally-legend {
+          display: flex;
+          justify-content: center;
+          gap: 32px;
+          margin-top: 6px;
+        }
+        .print-area .tally-legend-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+        }
+        .print-area .tally-example {
+          width: 22px;
+          height: 22px;
+        }
+        .print-area .tally-example-filled {
+          background: #000 !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .print-area .tally-name {
           font-size: 14px;
           font-weight: bold;
@@ -373,13 +394,21 @@ function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clas
       </div>
 
       <div className="tally-notice">
-        <strong>INSTRUCTIONS</strong>
-        <br />
-        ✏️ For every goal or assist, draw <strong>ONE LINE ( / ) in the next empty square</strong> of that player&apos;s row.
-        <br />
-        ❌ Made a mistake? <strong>FILL THAT SQUARE IN COMPLETELY</strong> (solid black): a filled square <strong>DOES NOT COUNT</strong>.
-        <br />
-        One line per square only. Write nothing else in the squares.
+        <strong>INSTRUCTIONS</strong> — One square per goal / assist. Use the next empty square in the player&apos;s row.
+        <div className="tally-legend">
+          <div className="tally-legend-item">
+            <span className="tally-box tally-example">
+              <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+                <line x1="4" y1="16" x2="16" y2="4" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span><strong>ONE LINE = COUNTS</strong> (1 goal / assist)</span>
+          </div>
+          <div className="tally-legend-item">
+            <span className="tally-box tally-example tally-example-filled" />
+            <span><strong>FULLY FILLED = CANCELLED</strong> (mistake, does not count)</span>
+          </div>
+        </div>
       </div>
 
       {teams.map(t => (
