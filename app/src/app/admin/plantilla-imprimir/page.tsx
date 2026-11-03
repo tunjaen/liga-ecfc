@@ -118,11 +118,7 @@ export default function PlantillaImprimirPage() {
       {/* Printable area */}
       {selectedMatch && (
         <div className="print-area">
-          {mode === 'rey' ? (
-            <ReyPlantilla match={selectedMatch} />
-          ) : (
-            <ClasicoPlantilla match={selectedMatch} />
-          )}
+          <TallyPlantilla match={selectedMatch} mode={mode} />
         </div>
       )}
 
@@ -260,111 +256,115 @@ export default function PlantillaImprimirPage() {
         .print-page {
           padding: 2px;
         }
+        .print-area .tally-notice {
+          border: 2px solid #000;
+          padding: 6px 8px;
+          margin-bottom: 10px;
+          font-size: 11px;
+          line-height: 1.5;
+          text-align: center;
+        }
+        .print-area .tally-table {
+          margin-bottom: 12px;
+        }
+        .print-area .tally-table th.tally-team-header {
+          font-size: 14px;
+          text-align: left;
+          padding: 5px 8px;
+          background: #d4d4d4;
+          letter-spacing: 0.04em;
+        }
+        .print-area .tally-swatch {
+          display: inline-block;
+          width: 14px;
+          height: 14px;
+          border: 1.5px solid #000;
+          border-radius: 50%;
+          margin-right: 8px;
+          vertical-align: -2px;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .print-area .tally-table th {
+          font-size: 11px;
+        }
+        .print-area .tally-cells {
+          padding: 2px 4px;
+        }
+        .print-area .tally-boxes {
+          display: flex;
+          gap: 2px;
+          justify-content: center;
+          align-items: center;
+        }
+        .print-area .tally-box {
+          display: inline-block;
+          border: 1.5px solid #000;
+          background: #fff;
+          box-sizing: border-box;
+          flex-shrink: 0;
+        }
+        .print-area .tally-name {
+          font-size: 14px;
+          font-weight: bold;
+          padding-left: 8px;
+          text-transform: uppercase;
+        }
+        .print-area .tally-table .row-num {
+          font-size: 11px;
+        }
       `}</style>
     </div>
   );
 }
 
-/* ========================================= */
-/*  REY DE LA PISTA TEMPLATE                 */
-/* ========================================= */
-function ReyPlantilla({ match }: { match: MatchData }) {
-  const teamCodes = match.teams.map(t => ({ code: getTeamCode(t.team_name), name: t.team_name, players: t.players }));
-  const codesStr = teamCodes.map(t => `${t.code} = ${t.name}`).join('  |  ');
-  const dateStr = new Date(match.match_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const MAX_GOALS = 12;
+const MAX_ASSISTS = 10;
 
-  const allRows = Array.from({ length: 20 }, (_, i) => i + 1);
-
+/* Casillas cuadradas, en bloques de 5 para contar rápido */
+function TallyBoxes({ size, count }: { size: number; count: number }) {
   return (
-    <div className="print-page">
-      <div className="header-block">
-        <div>
-          <h2>⚔️ LIGA ECFC — Rey de la Pista</h2>
-          <div style={{ fontSize: '11px' }}>
-            <strong>Fecha:</strong> {dateStr} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Códigos:</strong> {codesStr}
-          </div>
-        </div>
-      </div>
-
-      <div className="uppercase-notice">✏️ RELLENAR TODO EN MAYÚSCULAS</div>
-
-      {/* Player rosters */}
-      <div className="team-roster">
-        {teamCodes.map(t => (
-          <div key={t.code} className="team-roster-block">
-            <strong>{t.code} — {t.name}</strong>
-            {t.players.map(p => (
-              <div key={p.id}>{p.name}</div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th rowSpan={2} style={{ width: '18px' }}>#</th>
-            <th colSpan={3}>GOL 1</th>
-            <th colSpan={3}>GOL 2</th>
-            <th colSpan={3}>GOL 3</th>
-            <th rowSpan={2} style={{ width: '18px' }}>#</th>
-          </tr>
-          <tr>
-            <th style={{ fontSize: '7px' }}>Gol.</th>
-            <th style={{ fontSize: '7px' }}>Asis.</th>
-            <th style={{ fontSize: '7px' }}>Eq</th>
-            <th style={{ fontSize: '7px' }}>Gol.</th>
-            <th style={{ fontSize: '7px' }}>Asis.</th>
-            <th style={{ fontSize: '7px' }}>Eq</th>
-            <th style={{ fontSize: '7px' }}>Gol.</th>
-            <th style={{ fontSize: '7px' }}>Asis.</th>
-            <th style={{ fontSize: '7px' }}>Eq</th>
-          </tr>
-        </thead>
-        <tbody>
-          {allRows.map(n => (
-            <tr key={n} style={{ height: '24px' }}>
-              <td className="row-num">{n}</td>
-              <td></td><td></td><td></td>
-              <td></td><td></td><td></td>
-              <td></td><td></td><td></td>
-              <td className="row-num">{n}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="mvp-box">
-        ⭐ <strong>MVP Global:</strong> <span className="write-line" style={{ minWidth: '200px' }}></span>
-      </div>
-
-      <div className="notes-box">
-        📝 Notas:
-      </div>
-
-      <div className="digi-box">
-        📱 <strong>Para digitalizar:</strong> Sube la foto a ChatGPT con el prompt de la app (Admin → Importar Hoja) y pega el JSON.
-      </div>
+    <div className="tally-boxes">
+      {Array.from({ length: count }, (_, i) => (
+        <span
+          key={i}
+          className="tally-box"
+          style={{ width: `${size}px`, height: `${size}px`, marginLeft: i > 0 && i % 5 === 0 ? '6px' : undefined }}
+        />
+      ))}
     </div>
   );
 }
 
 /* ========================================= */
-/*  CLÁSICO TEMPLATE                         */
+/*  PLANTILLA DE PALOTES (Rey y Clásico)     */
 /* ========================================= */
-function ClasicoPlantilla({ match }: { match: MatchData }) {
-  const teamCodes = match.teams.map(t => ({ code: getTeamCode(t.team_name), name: t.team_name, players: t.players }));
-  const codesStr = teamCodes.map(t => `${t.code} = ${t.name}`).join('  |  ');
+function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clasico' }) {
+  const teams = match.teams.map(t => ({
+    code: getTeamCode(t.team_name),
+    name: t.team_name,
+    color: t.team_color,
+    players: t.players,
+  }));
+  const codesStr = teams.map(t => `${t.code} = ${t.name}`).join('  |  ');
   const dateStr = new Date(match.match_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const title = mode === 'rey' ? '⚔️ LIGA ECFC — Rey de la Pista' : '🏆 LIGA ECFC — Partido Clásico';
 
-  const goalRows = Array.from({ length: 30 }, (_, i) => i + 1);
+  // Altura de fila adaptada para que todo quepa en un A4 (más espacio cuantos menos jugadores)
+  const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
+  const available = 780 - teams.length * 52;
+  const rowHeight = Math.max(26, Math.min(48, Math.floor(available / Math.max(totalPlayers, 1))));
+  // Casillas cuadradas: tan grandes como permita la fila (y el ancho de la columna)
+  const boxSize = Math.max(16, Math.min(20, rowHeight - 8));
+
+  // Numeración continua de filas para que la IA use los # como anclas
+  let rowCounter = 0;
 
   return (
     <div className="print-page">
       <div className="header-block">
         <div>
-          <h2>🏆 LIGA ECFC — Partido Clásico</h2>
+          <h2>{title}</h2>
           <div style={{ fontSize: '11px' }}>
             <strong>Fecha:</strong> {dateStr} &nbsp;&nbsp;|&nbsp;&nbsp;
             <strong>Códigos:</strong> {codesStr}
@@ -372,52 +372,57 @@ function ClasicoPlantilla({ match }: { match: MatchData }) {
         </div>
       </div>
 
-      <div className="uppercase-notice">✏️ RELLENAR TODO EN MAYÚSCULAS</div>
-
-      {/* Player rosters */}
-      <div className="team-roster">
-        {teamCodes.map(t => (
-          <div key={t.code} className="team-roster-block">
-            <strong>{t.code} — {t.name}</strong>
-            {t.players.map(p => (
-              <div key={p.id}>{p.name}</div>
-            ))}
-          </div>
-        ))}
+      <div className="tally-notice">
+        <strong>INSTRUCTIONS</strong>
+        <br />
+        ✏️ For every goal or assist, draw <strong>ONE LINE ( / ) in the next empty square</strong> of that player&apos;s row.
+        <br />
+        ❌ Made a mistake? <strong>FILL THAT SQUARE IN COMPLETELY</strong> (solid black): a filled square <strong>DOES NOT COUNT</strong>.
+        <br />
+        One line per square only. Write nothing else in the squares.
       </div>
 
-      {/* Goals table */}
-      <table>
-        <thead>
-          <tr>
-            <th style={{ width: '22px' }}>#</th>
-            <th>Goleador</th>
-            <th>Asistente</th>
-            <th style={{ width: '22px' }}>#</th>
-          </tr>
-        </thead>
-        <tbody>
-          {goalRows.map(n => (
-            <tr key={n} style={{ height: '22px' }}>
-              <td className="row-num">{n}</td>
-              <td></td>
-              <td></td>
-              <td className="row-num">{n}</td>
+      {teams.map(t => (
+        <table key={t.code} className="tally-table">
+          <thead>
+            <tr>
+              <th colSpan={5} className="tally-team-header">
+                <span className="tally-swatch" style={{ background: t.color }} />
+                {t.code} — {t.name.toUpperCase()}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+            <tr>
+              <th style={{ width: '24px' }}>#</th>
+              <th>Jugador</th>
+              <th style={{ width: '40%' }}>⚽ Goles (máx. {MAX_GOALS})</th>
+              <th style={{ width: '33%' }}>👟 Asistencias (máx. {MAX_ASSISTS})</th>
+              <th style={{ width: '24px' }}>#</th>
+            </tr>
+          </thead>
+          <tbody>
+            {t.players.map(p => {
+              rowCounter += 1;
+              const n = rowCounter;
+              return (
+                <tr key={p.id} style={{ height: `${rowHeight}px` }}>
+                  <td className="row-num">{n}</td>
+                  <td className="tally-name">{p.name}</td>
+                  <td className="tally-cells"><TallyBoxes size={boxSize} count={MAX_GOALS} /></td>
+                  <td className="tally-cells"><TallyBoxes size={boxSize} count={MAX_ASSISTS} /></td>
+                  <td className="row-num">{n}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ))}
 
       <div className="mvp-box">
-        ⭐ <strong>MVP:</strong> <span className="write-line" style={{ minWidth: '200px' }}></span>
-      </div>
-
-      <div className="notes-box">
-        📝 Notas:
+        ⭐ <strong>MVP (en mayúsculas):</strong> <span className="write-line" style={{ minWidth: '220px' }}></span>
       </div>
 
       <div className="digi-box">
-        📱 <strong>Para digitalizar:</strong> Sube la foto a ChatGPT con el prompt de la app (Admin → Importar Hoja) y pega el JSON.
+        📱 <strong>Para digitalizar:</strong> Haz una foto a la hoja, súbela a la IA con el prompt de la app (Admin → Importar Hoja) y pega el JSON.
       </div>
     </div>
   );

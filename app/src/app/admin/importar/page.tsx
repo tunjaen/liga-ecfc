@@ -13,26 +13,24 @@ interface MatchData {
   teams: (MatchTeam & { players: Player[] })[];
 }
 
-// JSON format that AI will produce
-interface ImportedGoal {
-  goleador: string;
-  asistente?: string;
-  equipo: string; // Y, B, R, V or team name
+// JSON format that AI will produce (hoja de palotes: Rey de la Pista y Clásico)
+interface ImportedPlayerTally {
+  nombre: string;
+  goles: number;
+  asistencias: number;
 }
 
-interface ImportedMiniGame {
-  equipo_a: string;
-  equipo_b: string;
-  goles_a: number;
-  goles_b: number;
-  goles: ImportedGoal[];
+interface ImportedTeamTally {
+  equipo: string; // Y, B, R, V or team name
+  goles_totales: number;
+  jugadores: ImportedPlayerTally[];
 }
 
 interface ImportedData {
   modo: 'rey' | 'clasico';
   fecha: string;
   mvp: string;
-  partidos: ImportedMiniGame[];
+  equipos: ImportedTeamTally[];
 }
 
 const TEAM_CODE_MAP: Record<string, string> = {
@@ -46,22 +44,28 @@ function resolveTeamName(code: string): string {
   return TEAM_CODE_MAP[code.trim()] || code.trim();
 }
 
-const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de partidos de fútbol. Si toda la información es clara, devuélveme SOLO un JSON con este formato exacto (sin texto adicional ni bloques de markdown si es posible):
+const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de fútbol. En la hoja hay una tabla por equipo con los nombres de los jugadores YA IMPRESOS. En cada fila hay 12 CASILLAS CUADRADAS de GOLES y 10 CASILLAS CUADRADAS de ASISTENCIAS (agrupadas en bloques de 5). En las casillas NO hay nombres escritos: cada casilla con UNA RAYA (/, | o similar) es 1 gol o 1 asistencia de ese jugador.
+
+Si toda la información es clara, devuélveme un JSON con este formato exacto:
 
 {
-"modo": "rey",
+"modo": "clasico",
 "fecha": "YYYY-MM-DD",
 "mvp": "Nombre del MVP",
-"partidos": [
+"equipos": [
 {
-"equipo_a": "Y",
-"equipo_b": "B",
-"goles_a": 2,
-"goles_b": 1,
-"goles": [
-{ "goleador": "Javi", "asistente": "Borja", "equipo": "Y" },
-{ "goleador": "Alex", "equipo": "Y" },
-{ "goleador": "Andres", "asistente": "Pedro", "equipo": "B" }
+"equipo": "Y",
+"goles_totales": 3,
+"jugadores": [
+{ "nombre": "Javi", "goles": 2, "asistencias": 0 },
+{ "nombre": "Borja", "goles": 1, "asistencias": 2 }
+]
+},
+{
+"equipo": "B",
+"goles_totales": 1,
+"jugadores": [
+{ "nombre": "Andres", "goles": 1, "asistencias": 0 }
 ]
 }
 ]
@@ -69,25 +73,27 @@ const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de partidos de
 
 Reglas:
 
-1. MODO DE JUEGO: usa "rey" si hay varios partidos o "clasico" si solo hay uno.
+1. MODO DE JUEGO: el título de la hoja dice "Rey de la Pista" (usa "rey") o "Partido Clásico" (usa "clasico").
 
-2. CÓDIGOS DE EQUIPO: Y=Amarillo, B=Azul, R=Rojo, V=Verde.
+2. CÓDIGOS DE EQUIPO: Y=Amarillo, B=Azul, R=Rojo, V=Verde. Cada tabla tiene en su cabecera el código y el color del equipo.
 
-3. ANCLAJE DE FILAS Y FOTOS INCLINADAS (MUY IMPORTANTE): La foto puede estar inclinada, rotada o con perspectiva. Para evitar confundir filas o saltar de línea horizontalmente, utiliza los NÚMEROS DE FILA (#) presentes tanto a la IZQUIERDA como a la DERECHA de cada fila de la tabla como anclas de alineación horizontal. Procesa estricta y linealmente cada fila completa verificando que el # de la izquierda coincide con el # de la derecha antes de pasar a la siguiente fila.
+3. NOMBRES: copia los nombres EXACTAMENTE como están impresos en la hoja. No los cambies ni los abrevies. Incluye a TODOS los jugadores de cada equipo, aunque tengan 0 goles y 0 asistencias.
 
-4. ASISTENCIAS: Si no hay asistente, omite el campo "asistente".
+4. CÓMO CONTAR: para cada jugador, cuenta cuántas casillas de GOLES tienen una raya y cuántas casillas de ASISTENCIAS tienen una raya. Cada casilla con raya vale 1. Una casilla en blanco vale 0. Las casillas son independientes: no cuentes rayas sueltas fuera de las casillas.
 
-5. FILAS VACÍAS: Solo incluye partidos rellenados, ignora las filas totalmente vacías.
+5. CASILLAS ANULADAS (MUY IMPORTANTE): si una casilla está RELLENA ENTERA (pintada de negro o emborronada por completo), significa que fue un error y esa casilla NO CUENTA: vale 0. Solo cuentan las casillas con una raya y el fondo visible.
 
-6. FECHA: La fecha debe estar en formato YYYY-MM-DD.
+6. ANCLAJE DE FILAS Y FOTOS INCLINADAS: la foto puede estar inclinada, rotada o con perspectiva. Para no confundir filas, usa los NÚMEROS DE FILA (#) que hay a la IZQUIERDA y a la DERECHA de cada fila como anclas. Comprueba que el # de la izquierda coincide con el de la derecha antes de asignar las rayas a un jugador.
 
-7. VALIDACIÓN DE NOMBRES: En la parte superior de la hoja están escritos todos los nombres de los jugadores. Si tienes alguna duda sobre cómo se escribe o lee un nombre en la sección de los partidos (por caligrafía confusa, abreviaturas, etc.), es OBLIGATORIO que lo consultes y cruces con esa lista superior para asegurarte de que el nombre exacto y correcto se mete en el JSON.
+7. GOLES TOTALES: no hay marcador en la hoja. "goles_totales" de cada equipo es la SUMA de los goles de sus jugadores.
 
-8. VALIDACIÓN Y CORRECCIÓN DE RESULTADOS: Para evitar errores humanos en la anotación, NO confíes ciegamente en las columnas "RES. A" y "RES. B". Para determinar los valores finales de "goles_a" y "goles_b" en el JSON, DEBES contar cuántas veces aparece el código de cada equipo en la subcolumna "EQ" de los detalles de GOL 1, GOL 2 y GOL 3. Si la columna "EQ" no está rellenada, determina qué equipo ha ganado en base a quién ha metido los goles, cruzando los nombres con la lista superior de equipos si es necesario.
+8. MVP: es el único nombre escrito a mano. Crúzalo con los nombres impresos de la hoja y usa el nombre exacto impreso.
 
-9. MANEJO DE DUDAS (CRÍTICO): Si encuentras algún dato completamente ilegible, o una contradicción que no puedas resolver con las reglas anteriores, NO intentes adivinar, NO inventes información y NO devuelvas el JSON. En su lugar, devuelve únicamente un mensaje de texto indicando exactamente dónde está la duda (por ejemplo: "Duda en la fila #3: no puedo leer el nombre del asistente del GOL 2 del equipo Y") mencionando siempre el número de fila (#).
+9. FECHA: en formato YYYY-MM-DD.
 
-Antes del JSON quiero ver un resumen del partido, si ha sido rey de la pista o clasico. Tambien quiero saber el resultado final. Y los 3 jugadores con más goles anotados y más asistencias.`;
+10. MANEJO DE DUDAS (CRÍTICO): si no puedes saber con seguridad si una casilla tiene raya, está en blanco o está rellena (anulada), NO adivines, NO inventes y NO devuelvas el JSON. Devuelve solo un mensaje indicando exactamente dónde está la duda, mencionando siempre el número de fila (#), el jugador y la casilla (por ejemplo: "Duda en la fila #3 (Javi), GOLES: no sé si la 3ª casilla tiene una raya o está rellena").
+
+Antes del JSON quiero ver un resumen: el modo (Rey de la Pista o Clásico), los goles totales de cada equipo y los 3 jugadores con más goles y con más asistencias.`;
 
 export default function ImportarPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
@@ -153,8 +159,23 @@ export default function ImportarPage() {
       const data: ImportedData = JSON.parse(cleaned);
 
       // Validate structure
-      if (!data.partidos || !Array.isArray(data.partidos) || data.partidos.length === 0) {
-        throw new Error('El JSON debe tener un array "partidos" con al menos un partido.');
+      if (!data.equipos || !Array.isArray(data.equipos) || data.equipos.length < 2) {
+        throw new Error('El JSON debe tener un array "equipos" con al menos 2 equipos.');
+      }
+      for (const eq of data.equipos) {
+        if (!eq.equipo || !Array.isArray(eq.jugadores)) {
+          throw new Error('Cada equipo debe tener "equipo" y un array "jugadores".');
+        }
+        for (const j of eq.jugadores) {
+          if (!j.nombre || !Number.isInteger(j.goles ?? 0) || !Number.isInteger(j.asistencias ?? 0) || (j.goles ?? 0) < 0 || (j.asistencias ?? 0) < 0) {
+            throw new Error(`Datos no válidos para el jugador "${j.nombre ?? '?'}" (equipo ${eq.equipo}).`);
+          }
+        }
+        const suma = eq.jugadores.reduce((acc, j) => acc + (j.goles ?? 0), 0);
+        if (typeof eq.goles_totales === 'number' && eq.goles_totales !== suma) {
+          throw new Error(`Equipo ${eq.equipo}: "goles_totales" (${eq.goles_totales}) no coincide con la suma de goles de sus jugadores (${suma}).`);
+        }
+        eq.goles_totales = suma;
       }
       if (!data.mvp) {
         throw new Error('Falta el campo "mvp" con el nombre del MVP.');
@@ -178,7 +199,7 @@ export default function ImportarPage() {
       );
       const playerLookup = new Map<string, typeof allPlayers[0]>();
       allPlayers.forEach(p => {
-        playerLookup.set(p.name.toLowerCase(), p);
+        playerLookup.set(p.name.trim().toLowerCase(), p);
       });
 
       // Build a team lookup: color name -> team
@@ -189,111 +210,81 @@ export default function ImportarPage() {
         teamLookup.set(t.team_name.toLowerCase(), t);
       });
 
-      let registeredCount = 0;
+      // Resolve teams first so we fail before writing anything
+      const resolved = parsedData.equipos.map(eq => {
+        const team = teamLookup.get(resolveTeamName(eq.equipo).toLowerCase());
+        if (!team) throw new Error(`Equipo no encontrado en la convocatoria: ${eq.equipo}`);
+        return { eq, team };
+      });
 
-      for (const partido of parsedData.partidos) {
-        const teamAColor = resolveTeamName(partido.equipo_a);
-        const teamBColor = resolveTeamName(partido.equipo_b);
-        const teamA = teamLookup.get(teamAColor.toLowerCase());
-        const teamB = teamLookup.get(teamBColor.toLowerCase());
-
-        if (!teamA || !teamB) {
-          console.warn(`Equipos no encontrados: ${partido.equipo_a} / ${partido.equipo_b}`);
-          continue;
-        }
-
-        const goalsA = partido.goles_a;
-        const goalsB = partido.goles_b;
-        const isWinnerA = goalsA > goalsB;
-        const isWinnerB = goalsB > goalsA;
-
-        // Create mini-match
-        const { data: newMatch, error: matchErr } = await supabase.from('matches').insert({
-          match_date: parsedData.fecha || selectedMatch.match_date,
-          status: 'completed',
-          num_teams: 2,
-        }).select().single();
-
-        if (matchErr || !newMatch) {
-          console.error('Error creando partido:', matchErr);
-          continue;
-        }
-
-        // Create teams
-        const insertTeam = async (team: typeof teamA, goals: number, isWinner: boolean, teamNum: number) => {
-          const { data: newTeam } = await supabase.from('match_teams').insert({
-            match_id: newMatch.id,
-            team_number: teamNum,
-            team_name: team.team_name,
-            team_color: team.team_color,
-            total_points: team.total_points,
-            goals_scored: goals,
-            is_winner: isWinner,
-          }).select().single();
-
-          if (newTeam) {
-            const players = team.players.map(p => ({ match_team_id: newTeam.id, player_id: p.id }));
-            await supabase.from('match_team_players').insert(players);
-          }
-          return newTeam;
-        };
-
-        const newTeamA = await insertTeam(teamA, goalsA, isWinnerA, 1);
-        const newTeamB = await insertTeam(teamB, goalsB, isWinnerB, 2);
-
-        if (!newTeamA || !newTeamB) continue;
-
-        // Insert goal events
-        for (const gol of partido.goles) {
-          const golTeamColor = resolveTeamName(gol.equipo);
-          const matchTeamId = golTeamColor.toLowerCase() === teamAColor.toLowerCase() ? newTeamA.id : newTeamB.id;
-
-          const scorer = playerLookup.get(gol.goleador.toLowerCase());
-          if (!scorer) {
-            console.warn(`Jugador no encontrado: ${gol.goleador}`);
-            continue;
-          }
-
-          await supabase.from('match_events').insert({
-            match_id: newMatch.id,
-            player_id: scorer.id,
-            match_team_id: matchTeamId,
-            event_type: 'goal',
-          });
-
-          if (gol.asistente) {
-            const assister = playerLookup.get(gol.asistente.toLowerCase());
-            if (assister) {
-              await supabase.from('match_events').insert({
-                match_id: newMatch.id,
-                player_id: assister.id,
-                match_team_id: matchTeamId,
-                event_type: 'assist',
-              });
-            }
-          }
-        }
-
-        registeredCount++;
+      const missing: string[] = [];
+      resolved.forEach(({ eq }) => eq.jugadores.forEach(j => {
+        if (!playerLookup.has(j.nombre.trim().toLowerCase())) missing.push(j.nombre);
+      }));
+      if (missing.length > 0) {
+        throw new Error(`Jugadores no encontrados en la convocatoria: ${missing.join(', ')}`);
       }
 
-      // Set MVP on the last match
-      if (parsedData.mvp) {
-        const mvpPlayer = playerLookup.get(parsedData.mvp.toLowerCase());
-        if (mvpPlayer) {
-          // Get the last created match for this date
-          const { data: lastMatch } = await supabase
-            .from('matches')
-            .select('id')
-            .eq('match_date', parsedData.fecha || selectedMatch.match_date)
-            .eq('status', 'completed')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+      // Winner = team with most goals (no winner if tied at the top)
+      const maxGoals = Math.max(...resolved.map(r => r.eq.goles_totales));
+      const topTeams = resolved.filter(r => r.eq.goles_totales === maxGoals);
 
-          if (lastMatch) {
-            await supabase.from('matches').update({ mvp_player_id: mvpPlayer.id }).eq('id', lastMatch.id);
+      // Create one completed match with all the teams of the sheet
+      const { data: newMatch, error: matchErr } = await supabase.from('matches').insert({
+        match_date: parsedData.fecha || selectedMatch.match_date,
+        status: 'completed',
+        num_teams: resolved.length,
+      }).select().single();
+
+      if (matchErr || !newMatch) {
+        throw new Error(`Error creando el partido: ${matchErr?.message ?? 'desconocido'}`);
+      }
+
+      let goalCount = 0;
+      let assistCount = 0;
+
+      for (let i = 0; i < resolved.length; i++) {
+        const { eq, team } = resolved[i];
+        const isWinner = topTeams.length === 1 && topTeams[0].team.id === team.id;
+
+        const { data: newTeam } = await supabase.from('match_teams').insert({
+          match_id: newMatch.id,
+          team_number: i + 1,
+          team_name: team.team_name,
+          team_color: team.team_color,
+          total_points: team.total_points,
+          goals_scored: eq.goles_totales,
+          is_winner: isWinner,
+        }).select().single();
+
+        if (!newTeam) continue;
+
+        const players = team.players.map(p => ({ match_team_id: newTeam.id, player_id: p.id }));
+        await supabase.from('match_team_players').insert(players);
+
+        // One event per tally mark
+        const events: { match_id: string; player_id: string; match_team_id: string; event_type: 'goal' | 'assist' }[] = [];
+        for (const j of eq.jugadores) {
+          const player = playerLookup.get(j.nombre.trim().toLowerCase())!;
+          for (let g = 0; g < (j.goles ?? 0); g++) {
+            events.push({ match_id: newMatch.id, player_id: player.id, match_team_id: newTeam.id, event_type: 'goal' });
           }
+          for (let a = 0; a < (j.asistencias ?? 0); a++) {
+            events.push({ match_id: newMatch.id, player_id: player.id, match_team_id: newTeam.id, event_type: 'assist' });
+          }
+          goalCount += j.goles ?? 0;
+          assistCount += j.asistencias ?? 0;
+        }
+        if (events.length > 0) {
+          await supabase.from('match_events').insert(events);
+        }
+      }
+
+      // MVP
+      if (parsedData.mvp) {
+        const mvpPlayer = playerLookup.get(parsedData.mvp.trim().toLowerCase());
+        if (mvpPlayer) {
+          await supabase.from('matches').update({ mvp_player_id: mvpPlayer.id }).eq('id', newMatch.id);
         }
       }
 
@@ -304,7 +295,7 @@ export default function ImportarPage() {
         await supabase.from('matches').delete().eq('id', selectedMatch.id);
       }
 
-      setImportResult(`✅ ¡Importación completada! Se registraron ${registeredCount} partido(s) correctamente.`);
+      setImportResult(`✅ ¡Importación completada! Se registraron ${goalCount} goles y ${assistCount} asistencias.`);
     } catch (err: any) {
       setImportResult(`❌ Error durante la importación: ${err.message}`);
     } finally {
@@ -345,7 +336,7 @@ export default function ImportarPage() {
       <div className="card mb-lg" style={{ padding: 'var(--space-md)' }}>
         <div className="flex items-center gap-sm mb-sm">
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--accent-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>2</div>
-          <h3 style={{ fontSize: '1rem' }}>Copia el prompt para ChatGPT</h3>
+          <h3 style={{ fontSize: '1rem' }}>Copia el prompt para la IA</h3>
         </div>
         <p className="text-sm text-muted mb-md">
           Sube la foto de la hoja rellenada a ChatGPT y pega este prompt. La IA te devolverá un JSON estructurado.
@@ -418,22 +409,22 @@ export default function ImportarPage() {
           <div className="text-sm mb-md">
             <strong>Modo:</strong> {parsedData.modo === 'rey' ? '⚔️ Rey de la Pista' : '🏆 Clásico'} &nbsp;|&nbsp;
             <strong>Fecha:</strong> {parsedData.fecha} &nbsp;|&nbsp;
-            <strong>MVP:</strong> {parsedData.mvp} &nbsp;|&nbsp;
-            <strong>Partidos:</strong> {parsedData.partidos.length}
+            <strong>MVP:</strong> {parsedData.mvp}
           </div>
 
           <div className="flex flex-col gap-xs mb-md">
-            {parsedData.partidos.map((p, i) => (
-              <div key={i} className="flex items-center gap-sm text-sm" style={{ padding: 'var(--space-xs) 0', borderBottom: '1px solid var(--border-color)' }}>
-                <span className="text-muted">#{i + 1}</span>
-                <strong>{resolveTeamName(p.equipo_a)}</strong>
-                <span>{p.goles_a} - {p.goles_b}</span>
-                <strong>{resolveTeamName(p.equipo_b)}</strong>
-                {p.goles.length > 0 && (
-                  <span className="text-xs text-muted">
-                    ({p.goles.map(g => g.goleador).join(', ')})
-                  </span>
-                )}
+            {parsedData.equipos.map((eq, i) => (
+              <div key={i} className="text-sm" style={{ padding: 'var(--space-xs) 0', borderBottom: '1px solid var(--border-color)' }}>
+                <div className="flex items-center gap-sm">
+                  <strong>{resolveTeamName(eq.equipo)}</strong>
+                  <span>— {eq.goles_totales} gol(es)</span>
+                </div>
+                <div className="text-xs text-muted">
+                  {eq.jugadores
+                    .filter(j => (j.goles ?? 0) > 0 || (j.asistencias ?? 0) > 0)
+                    .map(j => `${j.nombre} (${j.goles ?? 0}G ${j.asistencias ?? 0}A)`)
+                    .join(', ') || 'Sin goles ni asistencias'}
+                </div>
               </div>
             ))}
           </div>
@@ -446,7 +437,7 @@ export default function ImportarPage() {
             {importing ? (
               <><Loader2 size={20} className="animate-spin" /> Importando...</>
             ) : (
-              <><Upload size={20} /> Importar {parsedData.partidos.length} partido(s)</>
+              <><Upload size={20} /> Importar resultados</>
             )}
           </button>
 
