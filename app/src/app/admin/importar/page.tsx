@@ -44,7 +44,7 @@ function resolveTeamName(code: string): string {
   return TEAM_CODE_MAP[code.trim()] || code.trim();
 }
 
-const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de fútbol. En la hoja hay una tabla por equipo con los nombres de los jugadores YA IMPRESOS. En cada fila hay 12 CASILLAS CUADRADAS de GOLES y 10 CASILLAS CUADRADAS de ASISTENCIAS (agrupadas en bloques de 5). En las casillas NO hay nombres escritos: cada casilla con UNA RAYA (/, | o similar) es 1 gol o 1 asistencia de ese jugador.
+const CHATGPT_PROMPT = `Analiza esta foto de una hoja de registro de fútbol. En la hoja hay una tabla por equipo con los nombres de los jugadores YA IMPRESOS. En cada fila hay 12 CASILLAS CUADRADAS de GOLES y 10 CASILLAS CUADRADAS de ASISTENCIAS (agrupadas en bloques de 5). En las casillas NO hay nombres escritos: cada casilla MARCADA (con una raya vertical |, una raya diagonal /, una X, un tick ✓ o cualquier marca que deje ver el fondo blanco) es 1 gol o 1 asistencia de ese jugador.
 
 Si toda la información es clara, devuélveme un JSON con este formato exacto:
 
@@ -79,9 +79,9 @@ Reglas:
 
 3. NOMBRES: copia los nombres EXACTAMENTE como están impresos en la hoja. No los cambies ni los abrevies. Incluye a TODOS los jugadores de cada equipo, aunque tengan 0 goles y 0 asistencias.
 
-4. CÓMO CONTAR: para cada jugador, cuenta cuántas casillas de GOLES tienen una raya y cuántas casillas de ASISTENCIAS tienen una raya. Cada casilla con raya vale 1. Una casilla en blanco vale 0. Las casillas son independientes: no cuentes rayas sueltas fuera de las casillas.
+4. CÓMO CONTAR: para cada jugador, cuenta cuántas casillas de GOLES están marcadas y cuántas casillas de ASISTENCIAS están marcadas. Cada casilla marcada vale 1, sea con una raya, una X o un tick: una X NO es una anulación, es un gol o asistencia válido. Una casilla en blanco vale 0. Las casillas son independientes: no cuentes rayas sueltas fuera de las casillas.
 
-5. CASILLAS ANULADAS (MUY IMPORTANTE): si una casilla está RELLENA ENTERA (pintada de negro o emborronada por completo), significa que fue un error y esa casilla NO CUENTA: vale 0. Solo cuentan las casillas con una raya y el fondo visible.
+5. CASILLAS ANULADAS (MUY IMPORTANTE): si una casilla está RELLENA ENTERA (pintada de negro o emborronada por completo), significa que fue un error y esa casilla NO CUENTA: vale 0. Solo una casilla rellena entera (sin fondo blanco visible) se anula; cualquier otra marca (raya, X, tick) cuenta como 1.
 
 6. ANCLAJE DE FILAS Y FOTOS INCLINADAS: la foto puede estar inclinada, rotada o con perspectiva. Para no confundir filas, usa los NÚMEROS DE FILA (#) que hay a la IZQUIERDA y a la DERECHA de cada fila como anclas. Comprueba que el # de la izquierda coincide con el de la derecha antes de asignar las rayas a un jugador.
 
@@ -91,7 +91,7 @@ Reglas:
 
 9. FECHA: en formato YYYY-MM-DD.
 
-10. MANEJO DE DUDAS (CRÍTICO): si no puedes saber con seguridad si una casilla tiene raya, está en blanco o está rellena (anulada), NO adivines, NO inventes y NO devuelvas el JSON. Devuelve solo un mensaje indicando exactamente dónde está la duda, mencionando siempre el número de fila (#), el jugador y la casilla (por ejemplo: "Duda en la fila #3 (Javi), GOLES: no sé si la 3ª casilla tiene una raya o está rellena").
+10. MANEJO DE DUDAS (CRÍTICO): si no puedes saber con seguridad si una casilla está marcada, está en blanco o está rellena entera (anulada), NO adivines, NO inventes y NO devuelvas el JSON. Devuelve solo un mensaje indicando exactamente dónde está la duda, mencionando siempre el número de fila (#), el jugador y la casilla (por ejemplo: "Duda en la fila #3 (Javi), GOLES: no sé si la 3ª casilla tiene una marca o está rellena entera").
 
 Antes del JSON quiero ver un resumen: el modo (Rey de la Pista o Clásico), los goles totales de cada equipo y los 3 jugadores con más goles y con más asistencias.`;
 

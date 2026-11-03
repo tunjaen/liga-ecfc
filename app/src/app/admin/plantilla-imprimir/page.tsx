@@ -304,6 +304,12 @@ export default function PlantillaImprimirPage() {
           box-sizing: border-box;
           flex-shrink: 0;
         }
+        .print-area .tally-proof {
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          margin-bottom: 4px;
+        }
         .print-area .tally-legend {
           display: flex;
           justify-content: center;
@@ -373,7 +379,7 @@ function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clas
 
   // Altura de fila adaptada para que todo quepa en un A4 (más espacio cuantos menos jugadores)
   const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
-  const available = 780 - teams.length * 52;
+  const available = 760 - teams.length * 52;
   const rowHeight = Math.max(26, Math.min(48, Math.floor(available / Math.max(totalPlayers, 1))));
   // Casillas cuadradas: tan grandes como permita la fila (y el ancho de la columna)
   const boxSize = Math.max(16, Math.min(20, rowHeight - 8));
@@ -399,10 +405,21 @@ function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clas
           <div className="tally-legend-item">
             <span className="tally-box tally-example">
               <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+                <line x1="10" y1="3" x2="10" y2="17" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span className="tally-box tally-example">
+              <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
                 <line x1="4" y1="16" x2="16" y2="4" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
               </svg>
             </span>
-            <span><strong>ONE LINE = COUNTS</strong> (1 goal / assist)</span>
+            <span className="tally-box tally-example">
+              <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+                <line x1="4" y1="4" x2="16" y2="16" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+                <line x1="4" y1="16" x2="16" y2="4" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span><strong>| or / or X = COUNTS</strong> (1 goal / assist)</span>
           </div>
           <div className="tally-legend-item">
             <span className="tally-box tally-example tally-example-filled" />
