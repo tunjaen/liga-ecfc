@@ -339,7 +339,7 @@ export default function ImportarPage() {
           <h3 style={{ fontSize: '1rem' }}>Copia el prompt para la IA</h3>
         </div>
         <p className="text-sm text-muted mb-md">
-          Sube la foto de la hoja rellenada a ChatGPT y pega este prompt. La IA te devolverá un JSON estructurado.
+          Sube la foto de la hoja rellenada a la IA (ChatGPT, Gemini, Claude…) y pega este prompt. Te devolverá un resumen y un JSON estructurado.
         </p>
         <div style={{ position: 'relative' }}>
           <pre style={{
@@ -369,17 +369,17 @@ export default function ImportarPage() {
       <div className="card mb-lg" style={{ padding: 'var(--space-md)' }}>
         <div className="flex items-center gap-sm mb-sm">
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--accent-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>3</div>
-          <h3 style={{ fontSize: '1rem' }}>Pega el JSON de ChatGPT</h3>
+          <h3 style={{ fontSize: '1rem' }}>Pega el JSON de la IA</h3>
         </div>
         <p className="text-sm text-muted mb-md">
-          Copia la respuesta completa de ChatGPT y pégala aquí:
+          Copia la respuesta completa de la IA y pégala aquí:
         </p>
         <textarea
           className="input"
           rows={10}
           value={jsonInput}
           onChange={e => setJsonInput(e.target.value)}
-          placeholder='Pega aquí el JSON que te dio ChatGPT...'
+          placeholder='Pega aquí el JSON que te dio la IA...'
           style={{ fontFamily: 'monospace', fontSize: '12px', resize: 'vertical' }}
         />
         <button
