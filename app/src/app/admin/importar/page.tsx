@@ -23,6 +23,8 @@ interface ImportedPlayerTally {
 interface ImportedTeamTally {
   equipo: string; // Y, B, R, V or team name
   goles_totales: number;
+  victorias?: number; // solo Rey de la Pista
+  empates?: number;   // solo Rey de la Pista
   jugadores: ImportedPlayerTally[];
 }
 
@@ -56,6 +58,8 @@ Si toda la información es clara, devuélveme un JSON con este formato exacto:
 {
 "equipo": "Y",
 "goles_totales": 3,
+"victorias": 4,
+"empates": 1,
 "jugadores": [
 { "nombre": "Javi", "goles": 2, "asistencias": 0 },
 { "nombre": "Borja", "goles": 1, "asistencias": 2 }
@@ -64,6 +68,8 @@ Si toda la información es clara, devuélveme un JSON con este formato exacto:
 {
 "equipo": "B",
 "goles_totales": 1,
+"victorias": 2,
+"empates": 1,
 "jugadores": [
 { "nombre": "Andres", "goles": 1, "asistencias": 0 }
 ]
@@ -91,9 +97,11 @@ Reglas:
 
 9. FECHA: en formato YYYY-MM-DD.
 
+9b. VICTORIAS Y EMPATES (SOLO REY DE LA PISTA): en Rey de la Pista, junto al nombre de cada equipo hay una fila de casillas "WINS ( / ) · DRAWS ( X )". Cuenta para cada equipo: casillas con una RAYA ( / o | ) = "victorias"; casillas con una X = "empates". Una casilla rellena entera está anulada y no cuenta. En Clásico no hay estas casillas: omite "victorias" y "empates".
+
 10. MANEJO DE DUDAS (CRÍTICO): si no puedes saber con seguridad si una casilla está marcada, está en blanco o está rellena entera (anulada), NO adivines, NO inventes y NO devuelvas el JSON. Devuelve solo un mensaje indicando exactamente dónde está la duda, mencionando siempre el número de fila (#), el jugador y la casilla (por ejemplo: "Duda en la fila #3 (Javi), GOLES: no sé si la 3ª casilla tiene una marca o está rellena entera").
 
-Antes del JSON quiero ver un resumen: el modo (Rey de la Pista o Clásico), los goles totales de cada equipo y los 3 jugadores con más goles y con más asistencias.`;
+Antes del JSON quiero ver un resumen: el modo (Rey de la Pista o Clásico), los goles totales de cada equipo, en Rey de la Pista las victorias y empates de cada equipo, y los 3 jugadores con más goles y con más asistencias.`;
 
 export default function ImportarPage() {
   const [matches, setMatches] = useState<MatchData[]>([]);
@@ -176,6 +184,12 @@ export default function ImportarPage() {
           throw new Error(`Equipo ${eq.equipo}: "goles_totales" (${eq.goles_totales}) no coincide con la suma de goles de sus jugadores (${suma}).`);
         }
         eq.goles_totales = suma;
+        for (const campo of ['victorias', 'empates'] as const) {
+          const v = eq[campo];
+          if (v !== undefined && (!Number.isInteger(v) || v < 0)) {
+            throw new Error(`Equipo ${eq.equipo}: "${campo}" debe ser un número entero (≥ 0).`);
+          }
+        }
       }
       if (!data.mvp) {
         throw new Error('Falta el campo "mvp" con el nombre del MVP.');
@@ -225,9 +239,14 @@ export default function ImportarPage() {
         throw new Error(`Jugadores no encontrados en la convocatoria: ${missing.join(', ')}`);
       }
 
-      // Winner = team with most goals (no winner if tied at the top)
-      const maxGoals = Math.max(...resolved.map(r => r.eq.goles_totales));
-      const topTeams = resolved.filter(r => r.eq.goles_totales === maxGoals);
+      // Winner: in Rey de la Pista, team with most points (3 per win, 1 per draw) when
+      // the sheet has the WINS/DRAWS boxes; otherwise team with most goals.
+      // No winner if tied at the top.
+      const hasResults = resolved.some(r => r.eq.victorias !== undefined || r.eq.empates !== undefined);
+      const score = (eq: ImportedTeamTally) =>
+        hasResults ? (eq.victorias ?? 0) * 3 + (eq.empates ?? 0) : eq.goles_totales;
+      const maxScore = Math.max(...resolved.map(r => score(r.eq)));
+      const topTeams = resolved.filter(r => score(r.eq) === maxScore);
 
       // Create one completed match with all the teams of the sheet
       const { data: newMatch, error: matchErr } = await supabase.from('matches').insert({
@@ -418,6 +437,11 @@ export default function ImportarPage() {
                 <div className="flex items-center gap-sm">
                   <strong>{resolveTeamName(eq.equipo)}</strong>
                   <span>— {eq.goles_totales} gol(es)</span>
+                  {(eq.victorias !== undefined || eq.empates !== undefined) && (
+                    <span className="text-muted">
+                      · {eq.victorias ?? 0}V {eq.empates ?? 0}E ({(eq.victorias ?? 0) * 3 + (eq.empates ?? 0)} pts)
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-muted">
                   {eq.jugadores

@@ -310,6 +310,40 @@ export default function PlantillaImprimirPage() {
           letter-spacing: 0.08em;
           margin-bottom: 4px;
         }
+        .print-area .rey-box {
+          border: 2px solid #000;
+          padding: 6px 8px;
+          margin-bottom: 10px;
+          font-size: 11px;
+          line-height: 1.5;
+          text-align: center;
+          background: #f5f5f5;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .print-area .rey-title {
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          margin-bottom: 2px;
+        }
+        .print-area .tally-team-header-inner {
+          display: flex;
+          align-items: center;
+          gap: 28px;
+        }
+        .print-area .tally-team-name {
+          min-width: 150px;
+        }
+        .print-area .tally-results {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .print-area .tally-results-label {
+          font-size: 9px;
+          letter-spacing: 0;
+        }
         .print-area .tally-legend {
           display: flex;
           justify-content: center;
@@ -347,6 +381,7 @@ export default function PlantillaImprimirPage() {
 
 const MAX_GOALS = 12;
 const MAX_ASSISTS = 10;
+const MAX_RESULTS = 15; // casillas de victorias/empates por equipo (Rey de la Pista)
 
 /* Casillas cuadradas, en bloques de 5 para contar rápido */
 function TallyBoxes({ size, count }: { size: number; count: number }) {
@@ -379,7 +414,7 @@ function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clas
 
   // Altura de fila adaptada para que todo quepa en un A4 (más espacio cuantos menos jugadores)
   const totalPlayers = teams.reduce((acc, t) => acc + t.players.length, 0);
-  const available = 760 - teams.length * 52;
+  const available = (mode === 'rey' ? 660 : 760) - teams.length * 52;
   const rowHeight = Math.max(26, Math.min(48, Math.floor(available / Math.max(totalPlayers, 1))));
   // Casillas cuadradas: tan grandes como permita la fila (y el ancho de la columna)
   const boxSize = Math.max(16, Math.min(20, rowHeight - 8));
@@ -428,13 +463,54 @@ function TallyPlantilla({ match, mode }: { match: MatchData; mode: 'rey' | 'clas
         </div>
       </div>
 
+      {mode === 'rey' && (
+        <div className="rey-box">
+          <div className="rey-title">⚔️ KING OF THE COURT — TEAM RESULTS</div>
+          After every mini-match, mark it in the box next to the team name:
+          <div className="tally-legend">
+            <div className="tally-legend-item">
+              <span className="tally-box tally-example">
+                <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+                  <line x1="4" y1="16" x2="16" y2="4" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span><strong>LINE = WIN</strong> (only the winning team)</span>
+            </div>
+            <div className="tally-legend-item">
+              <span className="tally-box tally-example">
+                <svg viewBox="0 0 20 20" width="100%" height="100%" aria-hidden="true">
+                  <line x1="4" y1="4" x2="16" y2="16" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+                  <line x1="4" y1="16" x2="16" y2="4" stroke="#000" strokeWidth="2.2" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span><strong>X = DRAW</strong> (mark it in BOTH teams)</span>
+            </div>
+            <div className="tally-legend-item">
+              <span className="tally-box tally-example tally-example-filled" />
+              <span><strong>FILLED = CANCELLED</strong></span>
+            </div>
+          </div>
+          Losses are not marked.
+        </div>
+      )}
+
       {teams.map(t => (
         <table key={t.code} className="tally-table">
           <thead>
             <tr>
               <th colSpan={5} className="tally-team-header">
-                <span className="tally-swatch" style={{ background: t.color }} />
-                {t.code} — {t.name.toUpperCase()}
+                <div className="tally-team-header-inner">
+                  <span className="tally-team-name">
+                    <span className="tally-swatch" style={{ background: t.color }} />
+                    {t.code} — {t.name.toUpperCase()}
+                  </span>
+                  {mode === 'rey' && (
+                    <span className="tally-results">
+                      <span className="tally-results-label">WINS ( / ) · DRAWS ( X )</span>
+                      <TallyBoxes size={18} count={MAX_RESULTS} />
+                    </span>
+                  )}
+                </div>
               </th>
             </tr>
             <tr>
