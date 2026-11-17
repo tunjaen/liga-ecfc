@@ -14,6 +14,7 @@ export interface Player {
   technique: number;
   iq: number;
   total_score: number;
+  manual_score?: number | null;
   country: string;
   is_active: boolean;
   created_at: string;

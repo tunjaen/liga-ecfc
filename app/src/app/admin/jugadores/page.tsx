@@ -22,6 +22,7 @@ export default function JugadoresAdminPage() {
   const [formFitness, setFormFitness] = useState(5);
   const [formTechnique, setFormTechnique] = useState(5);
   const [formIq, setFormIq] = useState(5);
+  const [formManualScore, setFormManualScore] = useState('');
   const [formCountry, setFormCountry] = useState('ES');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function JugadoresAdminPage() {
     setFormFitness(5);
     setFormTechnique(5);
     setFormIq(5);
+    setFormManualScore('');
     setFormCountry('ES');
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -67,6 +69,7 @@ export default function JugadoresAdminPage() {
     setFormFitness(player.fitness);
     setFormTechnique(player.technique);
     setFormIq(player.iq);
+    setFormManualScore(player.manual_score != null ? String(player.manual_score) : '');
     setFormCountry(player.country || 'ES');
     setPhotoFile(null);
     setPhotoPreview(getPlayerPhotoUrl(player.photo_url));
@@ -101,6 +104,7 @@ export default function JugadoresAdminPage() {
       fitness: formFitness,
       technique: formTechnique,
       iq: formIq,
+      manual_score: formManualScore.trim() === '' ? null : Number(formManualScore),
       country: formCountry,
       photo_url: photoUrl,
     };
@@ -128,6 +132,9 @@ export default function JugadoresAdminPage() {
   };
 
   const totalScore = formDefense + formAttack + formFitness + formTechnique + formIq;
+  const effectiveTotal = formManualScore.trim() !== '' ? Number(formManualScore) : totalScore;
+  // Solo Fernando tiene la casilla de puntuación manual (petición del usuario)
+  const showManualScore = editingPlayer?.name === 'Fernando';
 
   return (
     <div className="animate-fade-in">
@@ -376,10 +383,31 @@ export default function JugadoresAdminPage() {
                   />
                 </div>
 
+                {showManualScore && (
+                  <div className="input-group">
+                    <label className="input-label" htmlFor="player-manual-score">
+                      Puntuación manual (opcional, con decimales)
+                    </label>
+                    <input
+                      id="player-manual-score"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      className="input"
+                      placeholder="Ej: 26.3"
+                      value={formManualScore}
+                      onChange={(e) => setFormManualScore(e.target.value)}
+                    />
+                    <p className="text-xs text-muted mt-xs">
+                      Déjalo vacío para calcular la puntuación automáticamente con las 5 estadísticas.
+                    </p>
+                  </div>
+                )}
+
                 <div className="card text-center" style={{ background: 'var(--bg-surface)', padding: 'var(--space-md)' }}>
                   <div className="text-xs text-muted mb-xs">Puntuación Total</div>
                   <div className="font-bold" style={{ fontSize: '2rem', color: 'var(--accent-primary)' }}>
-                    {totalScore}
+                    {effectiveTotal}
                   </div>
                 </div>
               </div>
