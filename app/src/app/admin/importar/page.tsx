@@ -273,6 +273,8 @@ export default function ImportarPage() {
           team_color: team.team_color,
           total_points: team.total_points,
           goals_scored: eq.goles_totales,
+          victorias: eq.victorias ?? 0,
+          empates: eq.empates ?? 0,
           is_winner: isWinner,
         }).select().single();
 

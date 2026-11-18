@@ -24,6 +24,14 @@ interface TeamStanding {
   goalDiff: number;
 }
 
+// Puntos de un equipo en Rey de la Pista (3 por victoria, 1 por empate)
+const getReyPoints = (victorias: number | undefined, empates: number | undefined): number =>
+  (victorias || 0) * 3 + (empates || 0);
+
+// Detecta si un partido individual es de tipo Rey de la Pista (tiene victorias/empates guardados)
+const isReyMatch = (match: MatchDetail): boolean =>
+  match.teams.some(t => (t.victorias || 0) > 0 || (t.empates || 0) > 0);
+
 export function MatchHistoryList({ matches }: MatchHistoryListProps) {
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
@@ -140,6 +148,7 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
 
   const renderSingleMatch = (match: MatchDetail, index: number) => {
     const winningTeam = match.teams.find(t => t.is_winner);
+    const isRey = isReyMatch(match);
     const goalEvents = getMatchGoalEvents(match);
     const assistEvents = getMatchAssistEvents(match);
 
@@ -173,8 +182,13 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                         fontSize: '2rem',
                       }}
                     >
-                      {team.goals_scored}
+                      {isRey ? getReyPoints(team.victorias, team.empates) : team.goals_scored}
                     </span>
+                    {isRey && (
+                      <span className="text-xs text-muted" style={{ fontWeight: 600 }}>
+                        {team.goals_scored} {team.goals_scored === 1 ? 'gol' : 'goles'}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -307,6 +321,28 @@ export function MatchHistoryList({ matches }: MatchHistoryListProps) {
                 </div>
                 {isExpanded ? <ChevronUp size={20} className="text-muted" /> : <ChevronDown size={20} className="text-muted" />}
               </div>
+
+              {/* Puntos sumados + goles de cada equipo */}
+              {standings.length > 0 && (
+                <div className="score-display mb-md">
+                  {standings.map((st, i) => (
+                    <div key={st.teamName} style={{ display: 'contents' }}>
+                      {i > 0 && <span className="score-vs">VS</span>}
+                      <div className="score-team">
+                        <span className="score-team-name" style={{ color: st.teamColor }}>
+                          {st.teamName}
+                        </span>
+                        <span className="score-number" style={{ fontSize: '2rem', color: st.teamColor }}>
+                          {st.points}
+                        </span>
+                        <span className="text-xs text-muted" style={{ fontWeight: 600 }}>
+                          {st.goalsFor} {st.goalsFor === 1 ? 'gol' : 'goles'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Winning team avatars */}
               {standings.length > 0 && (() => {

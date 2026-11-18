@@ -38,6 +38,8 @@ export interface MatchTeam {
   team_color: string;
   total_points: number;
   goals_scored: number;
+  victorias?: number;
+  empates?: number;
   is_winner: boolean;
 }
 
